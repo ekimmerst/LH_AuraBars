@@ -28,12 +28,12 @@ for class_name in ('PALADIN', 'ROGUE', 'WARRIOR', 'WARLOCK'):
      GetSpellBookSkillLineInfo=function(line) return {itemIndexOffset=line==1 and 0 or 1,numSpellBookItems=1} end,
      GetSpellBookItemInfo=function(i) return {spellID=i==1 and 20572 or 6789,isPassive=false,isOffSpec=false} end}
     running=true; events.scripts.OnEvent(events,'SPELLS_CHANGED'); assert(count()==1,'Modern General racial cooldown missing')
-    C_UnitAuras={GetUnitAuras=function() return {
+    C_UnitAuras={GetUnitAuras=function(unit,filter) if unit=="target" or filter=="HARMFUL" then return {} end return {
      {name='Bloodfury',spellId=20572,duration=15,expirationTime=115},
      {name='Permanent Racial',spellId=999999,duration=0,expirationTime=0}
     } end}
     events.scripts.OnEvent(events,'UNIT_AURA','player'); assert(count()==2,'Timed racial buff missing or permanent buff visible')
-    C_UnitAuras.GetUnitAuras=function() return {} end
+    C_UnitAuras.GetUnitAuras=function(unit) if unit=="target" then return {} end return {} end
     events.scripts.OnEvent(events,'UNIT_AURA','player'); assert(count()==1)
     clock=221; events.scripts.OnUpdate(events,0.5); assert(count()==0,'Expired racial cooldown remains')
     print('PASS: '..TEST_CLASS..' racial cooldown, legacy/modern spellbook, timed buff, permanent filter, reset and expiration')

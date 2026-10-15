@@ -21,7 +21,7 @@ local raw={}
 C_Spell={GetSpellName=function(id) return 'Spell'..id end,
  GetSpellCooldown=function(id) return raw[id] or {startTime=0,duration=0,isEnabled=true} end}
 local data={}
-C_UnitAuras={GetUnitAuras=function() return data end}
+C_UnitAuras={GetUnitAuras=function(unit,filter) if unit=="target" or filter=="HARMFUL" then return {} end return data end}
 events.scripts.OnEvent(events,'ADDON_LOADED','MiniBars')
 data={{name='Shield Block',spellId=2565,duration=30,expirationTime=130},
  {name='Proc',spellId=999999,duration=120,expirationTime=220},

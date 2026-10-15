@@ -13,7 +13,7 @@ local function count()
  return n
 end
 local data={}
-C_UnitAuras={GetUnitAuras=function() return data end}
+C_UnitAuras={GetUnitAuras=function(unit,filter) if unit=="target" or filter=="HARMFUL" then return {} end return data end}
 C_Spell={GetSpellName=function(id) return 'Spell'..id end,
  GetSpellCooldown=function(id)
   if id==20271 then return {startTime=100,duration=600,isEnabled=true} end
