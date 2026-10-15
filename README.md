@@ -1,6 +1,6 @@
 # MiniBars
 
-Paladin-, Schurken- und Krieger-Buff- und Cooldown-Balken für WoW Forever Beta (Interface 16001). Buffs erscheinen erst bei weniger als drei Minuten Restlaufzeit, unabhängig von ihrer Gesamtdauer. Dies gilt auch für Talent-Procs und empfangene Buffs bei Schurken und Kriegern sowie geschätzte Paladin-Siegel. Permanente Auren werden ausgeblendet. Cooldowns erscheinen unabhängig von ihrer Restlaufzeit. Die Anzeige setzt ein lebendes, angreifbares Ziel voraus. Laufzeiten stammen aus den aktiven Buffs des Clients. Bekannte Paladin-Fähigkeiten werden über lokalisierte Zaubernamen erkannt, neue Fähigkeiten zusätzlich aus den Klassenabschnitten des Zauberbuchs. Schurken- und Krieger-Cooldowns werden für alle aktiven Fähigkeiten dieser Klassenabschnitte automatisch erfasst, unabhängig von Rang und Clientsprache.
+Paladin-, Schurken-, Krieger- und Hexer-Buff- und Cooldown-Balken für WoW Forever Beta (Interface 16001). Buffs erscheinen erst bei weniger als drei Minuten Restlaufzeit, unabhängig von ihrer Gesamtdauer. Dies gilt auch für Talent-Procs und empfangene Buffs bei Schurken, Kriegern und Hexern sowie geschätzte Paladin-Siegel. Permanente Auren werden ausgeblendet. Cooldowns erscheinen unabhängig von ihrer Restlaufzeit. Die Anzeige setzt ein lebendes, angreifbares Ziel voraus. Laufzeiten stammen aus den aktiven Buffs des Clients. Bekannte Paladin-Fähigkeiten werden über lokalisierte Zaubernamen erkannt, neue Fähigkeiten zusätzlich aus den Klassenabschnitten des Zauberbuchs. Bei allen vier unterstützten Klassen werden Cooldowns aktiver Fähigkeiten aus den Klassenabschnitten und dem allgemeinen Zauberbuchabschnitt automatisch erfasst, einschließlich Volksfähigkeiten und unabhängig von Rang und Clientsprache. Zeitlich begrenzte Buffs dieser Volksfähigkeiten werden ebenfalls angezeigt.
 
 Die Balken erscheinen rechts neben der Bildschirmmitte. Breite, goldene Farbe, Smooth-Textur und Rahmen entsprechen MiniExpBar. Die Textur liegt auch in MiniBars, sodass MiniExpBar nicht zwingend aktiviert sein muss. Die Balken sind von oben nach unten nach absteigender Restdauer sortiert. Der Buff mit der längsten Restdauer steht oben. Der Stapel wächst nach oben; die Position des untersten Balkens bleibt beim Hinzufügen und Entfernen fixiert. In den letzten drei Sekunden blinkt der Balken; ausgelaufene oder entfernte Buffs verschwinden.
 
@@ -13,6 +13,14 @@ Position, Größe und Sperrstatus werden pro Charakter gespeichert. Nach der Ins
 Validierung: Lua-5.1-Tests mit simulierten WoW-APIs für Sortierung, Restzeit, Füllstand, Blinken, Entfernen, Testbalken, Sperre, Breite und Position. Ein Live-Test in der Beta steht aus.
 
 ## Changelog
+
+### 1.3.3 — 2026-10-15
+
+- Include the General spellbook section when discovering cooldowns, enabling racial abilities such as Bloodfury.
+
+### 1.3.2 — 2026-10-15
+
+- Added Warlock support: automatically discover learned class abilities and track their cooldowns, temporary player buffs, talent procs, and received buffs.
 
 ### 1.3.1 — 2026-10-15
 

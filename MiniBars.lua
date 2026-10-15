@@ -9,10 +9,10 @@ local visibleCount = 0
 local names, spells = {}, {}
 local playerClass
 local function SupportsClass(class)
-    return class == "PALADIN" or class == "ROGUE" or class == "WARRIOR"
+    return class == "PALADIN" or class == "ROGUE" or class == "WARRIOR" or class == "WARLOCK"
 end
 local function TracksAllTimedBuffs()
-    return playerClass == "ROGUE" or playerClass == "WARRIOR"
+    return playerClass == "ROGUE" or playerClass == "WARRIOR" or playerClass == "WARLOCK"
 end
 local sealNames, estimatedSeal = {}, nil
 local cooldownSpells, cooldowns = {}, {}
@@ -54,10 +54,10 @@ local function RefreshSpells()
             if ok and learned == true then AddCooldownSpell(id) end
         end
     end
-    -- Discover newly added beta abilities rather than hard-code their duration.
+    -- Include General for racial abilities such as Bloodfury, and discover beta abilities.
     if C_SpellBook and C_SpellBook.GetNumSpellBookSkillLines then
         local bank = Enum.SpellBookSpellBank.Player
-        for line = 2, C_SpellBook.GetNumSpellBookSkillLines() do
+        for line = 1, C_SpellBook.GetNumSpellBookSkillLines() do
             local info = C_SpellBook.GetSpellBookSkillLineInfo(line)
             if info then
                 for index = info.itemIndexOffset + 1, info.itemIndexOffset + info.numSpellBookItems do
@@ -70,7 +70,7 @@ local function RefreshSpells()
             end
         end
     elseif GetNumSpellTabs and GetSpellTabInfo and GetSpellBookItemInfo then
-        for tab = 2, GetNumSpellTabs() do
+        for tab = 1, GetNumSpellTabs() do
             local _, _, offset, count = GetSpellTabInfo(tab)
             for index = offset + 1, offset + count do
                 local kind, id = GetSpellBookItemInfo(index, "spell")
