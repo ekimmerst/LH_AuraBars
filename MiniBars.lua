@@ -509,7 +509,7 @@ end
 local function BaseCooldown(id)
     if not GetSpellBaseCooldown then return nil end
     local ok, ms = pcall(GetSpellBaseCooldown, id)
-    if ok and PlainNumber(ms) and ms > 0 then return ms / 1000 end
+    if ok and PlainNumber(ms) and ms >= 0 then return ms / 1000 end
 end
 local function ReadCooldown(id)
     local info
@@ -581,8 +581,19 @@ local function TrackCooldownCast(unit, id)
     end
     if not name then return end
     local ok, timer = pcall(ReadCooldown, id)
-    if not ok or not timer then
-        local duration = MiniBarsDB.cooldownDurations[name] or BaseCooldown(id)
+    -- A readable ready/GCD result is authoritative; only hidden data permits an estimate.
+    if ok and timer == false then
+        cooldowns[name] = nil
+        return
+    end
+    if not ok or timer == nil then
+        local base = BaseCooldown(id)
+        -- An explicit zero also overrides stale durations learned by older versions.
+        if base == 0 then
+            MiniBarsDB.cooldownDurations[name], cooldowns[name] = nil, nil
+            return
+        end
+        local duration = MiniBarsDB.cooldownDurations[name] or base
         if not PlainNumber(duration) or duration <= 0 then return end
         local now = GetTime()
         timer = {duration = duration, expires = now + duration, started = now}
@@ -895,7 +906,7 @@ local function DebugTarget()
             end
         end
     end
-    print("MiniBars: Target-Diagnose 1.5.2")
+    print("MiniBars: Target-Diagnose 1.5.3")
     print("MiniBars: Native Zielauren = " .. (nativeTarget and "aktiv" or "inaktiv"))
     print("MiniBars: Native Spieler-Debuffs = " .. (nativePlayerDebuffs and "aktiv" or "inaktiv"))
     if nativePlayerError then print("MiniBars: Spieler-Debuffs Initialisierung: " .. describe(nativePlayerError)) end

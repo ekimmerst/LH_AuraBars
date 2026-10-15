@@ -22,6 +22,11 @@ Validierung: Lua-5.1-Tests mit simulierten WoW-APIs für Sortierung, Restzeit, F
 
 ## Changelog
 
+### 1.5.3 — 2026-10-15
+
+- Respect readable ready/GCD results after casts instead of starting cached cooldown estimates. An explicit zero base cooldown also prevents stale cached timers when live cooldown data is unavailable.
+- Added regression coverage for Corruption and Immolate, stale saved durations, GCD-only results and real cooldown fallbacks. Warlock and unit ownership tests pass; the fix was also confirmed in the live beta client.
+
 ### 1.5.2 — 2026-10-15
 
 - Hide the native target aura container immediately when no target exists. Restore and refresh it when a target is acquired, including friendly targets. Unlock previews remain usable without a target.

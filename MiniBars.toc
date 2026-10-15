@@ -3,7 +3,7 @@
 ## Notes: Paladin, rogue, warrior and warlock buff and spell cooldown bars matching MiniExpBar.
 ## Notes-deDE: Paladin-, Schurken-, Krieger- und Hexer-Buff- und Cooldown-Balken im Stil von MiniExpBar.
 ## Author: MiniBars
-## Version: 1.5.2
+## Version: 1.5.3
 ## SavedVariablesPerCharacter: MiniBarsDB
 
 MiniBars.lua
