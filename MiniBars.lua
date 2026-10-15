@@ -1,12 +1,19 @@
 local ADDON_NAME = ...
 local HEIGHT, INSET, GAP = 20, 3, 3
-local MAX_BUFF_DURATION = 60
+local MAX_BUFF_REMAINING = 180
 local TEXTURE = "Interface\\AddOns\\MiniBars\\Media\\Smooth.tga"
 local anchor, rows, active = nil, {}, {}
 local initialized, preview = false, false
 local resizeHandle, resizing
 local visibleCount = 0
 local names, spells = {}, {}
+local playerClass
+local function SupportsClass(class)
+    return class == "PALADIN" or class == "ROGUE" or class == "WARRIOR"
+end
+local function TracksAllTimedBuffs()
+    return playerClass == "ROGUE" or playerClass == "WARRIOR"
+end
 local sealNames, estimatedSeal = {}, nil
 local cooldownSpells, cooldowns = {}, {}
 local sealSeeds = {21084,20154,21082,20375,20164,20165,20166,20163}
@@ -28,14 +35,18 @@ local function AddCooldownSpell(id)
     if name then cooldownSpells[id] = name end
 end
 local function RefreshSpells()
-    cooldownSpells = {}
-    for _, id in ipairs(seeds) do AddSpell(id) end
-    for _, id in ipairs(sealSeeds) do
-        local name = AddSpell(id)
-        if name then sealNames[name] = true end
-    end
     local _, class = UnitClass("player")
-    if class ~= "PALADIN" then return end
+    playerClass = class
+    names, spells, sealNames = {}, {}, {}
+    cooldownSpells = {}
+    if class == "PALADIN" then
+        for _, id in ipairs(seeds) do AddSpell(id) end
+        for _, id in ipairs(sealSeeds) do
+            local name = AddSpell(id)
+            if name then sealNames[name] = true end
+        end
+    end
+    if not SupportsClass(class) then return end
     local known = C_SpellBook and C_SpellBook.IsSpellKnown or IsSpellKnown
     if known then
         for id in pairs(spells) do
@@ -225,7 +236,7 @@ local function BuildSnapshot()
             local duration, expiration = aura.duration, aura.expirationTime
             if not IsSecret(id) and not IsSecret(name) and
                 not IsSecret(duration) and not IsSecret(expiration) and
-                (spells[id] or names[name]) and type(name) == "string" and
+                (TracksAllTimedBuffs() or spells[id] or names[name]) and type(name) == "string" and
                 type(duration) == "number" and duration > 0 and
                 type(expiration) == "number" and expiration > now then
                 -- The scan index is always plain and only serves as a sort tie-breaker.
@@ -352,7 +363,7 @@ end
 local function TrackCooldownCast(unit, id)
     if IsSecret(unit) or unit ~= "player" or not PlainNumber(id) then return end
     local _, class = UnitClass("player")
-    if class ~= "PALADIN" then return end
+    if not SupportsClass(class) then return end
     local name = cooldownSpells[id]
     if not name and spells[id] then
         name = AddSpell(id)
@@ -407,13 +418,13 @@ local function Render()
     local ok, attackable = pcall(HasAttackableTarget)
     if ok and attackable then
         for _, buff in ipairs(active) do
-            if buff.duration <= MAX_BUFF_DURATION and buff.expires > now and
+            if buff.expires - now < MAX_BUFF_REMAINING and buff.expires > now and
                 (not estimatedSeal or not sealNames[buff.name]) then
                 display[#display + 1] = buff
             end
         end
     end
-    if ok and attackable and estimatedSeal and estimatedSeal.duration <= MAX_BUFF_DURATION and
+    if ok and attackable and estimatedSeal and estimatedSeal.expires - now < MAX_BUFF_REMAINING and
         estimatedSeal.expires > now then
         display[#display + 1] = estimatedSeal
     end
