@@ -1,5 +1,5 @@
 from pathlib import Path
-exec(Path('.lua-test-support.py').read_text())
+exec((Path(__file__).resolve().parent / '.lua-test-support.py').read_text())
 lua.execute('''
 local baseCreate=CreateFrame
 local container, playerContainer, registrations={},{},{}
@@ -41,18 +41,27 @@ function CreateFrame(kind,name,parent,template)
    assert(unit=='target' or unit=='player'); self.unit=unit
    if unit=='target' then container=self else playerContainer=self end
   end
-  f.UpdateAllAuras=function(self) self.refreshed=true end
-  f.SetShown=function(self,value) self.visible=value end
+  f.UpdateAllAuras=function(self)
+   self.refreshed=true
+   self.displayedUnit=self.unit
+   self.refreshCount=(rawget(self,'refreshCount') or 0)+1
+  end
+  f.SetShown=function(self,value)
+   self.visible=value
+   -- Exercise a lifecycle rebind: addon must restore its explicit unit after show.
+   if value then self.unit='target' end
+  end
  end
  return f
 end
 local events
 for _,f in ipairs(frames) do if f.scripts.OnEvent then events=f end end
-events.scripts.OnEvent(events,'ADDON_LOADED','MiniBars')
+events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars')
 assert(container.unit=='target' and container.refreshed and container.visible)
 assert(#registrations==3 and rawReads==0,'Native backend must not query restricted target APIs')
-assert(playerContainer.unit=='player' and playerContainer.parent==MiniBarsFrame)
-assert(container.parent==MiniBarsTargetFrame)
+assert(playerContainer.unit=='player' and playerContainer.parent==MiniAuraBarsFrame)
+assert(playerContainer.displayedUnit=='player','Showing player container displayed target auras')
+assert(container.parent==MiniAuraBarsTargetFrame)
 assert(playerContainer.groups.HARMFUL and not playerContainer.groups.HELPFUL)
 assert(registrations[3].container==playerContainer and registrations[3].bar.color[1]==0.9)
 for _,r in ipairs(registrations) do
@@ -61,7 +70,10 @@ for _,r in ipairs(registrations) do
 end
 assert(registrations[1].bar.color[1]==0.9 and registrations[2].bar.color[1]==1)
 events.scripts.OnEvent(events,'UNIT_AURA','target')
+local refreshCount=container.refreshCount
 events.scripts.OnEvent(events,'PLAYER_TARGET_CHANGED')
+assert(container.refreshCount>refreshCount,'Visible target switch did not refresh native auras')
+assert(playerContainer.unit=='player' and playerContainer.displayedUnit=='player')
 events.scripts.OnUpdate(events,0.5)
 assert(rawReads==0)
 targetExists=false
@@ -69,18 +81,18 @@ events.scripts.OnEvent(events,'PLAYER_TARGET_CHANGED')
 assert(not container.visible,'Target container remained visible after clearing target')
 events.scripts.OnUpdate(events,0.5)
 assert(not container.visible,'Polling reopened target container without target')
-SlashCmdList.MINIBARS('unlock')
+SlashCmdList.MINIAURABARS('unlock')
 assert(not container.visible,'Native auras overlap previews without target')
-assert(MiniBarsTargetResizeHandle.visible,'Target previews unavailable without target')
-SlashCmdList.MINIBARS('lock')
+assert(MiniAuraBarsTargetResizeHandle.visible,'Target previews unavailable without target')
+SlashCmdList.MINIAURABARS('lock')
 assert(not container.visible,'Locking reopened target container without target')
 targetExists=true; targetAttackable=false; container.refreshed=false
 events.scripts.OnEvent(events,'PLAYER_TARGET_CHANGED')
 assert(container.visible and container.refreshed,'Friendly target did not restore and refresh container')
 targetAttackable=true
-SlashCmdList.MINIBARS('unlock'); assert(not container.visible)
+SlashCmdList.MINIAURABARS('unlock'); assert(not container.visible)
 mouseDown=true; cursorX=0; cursorY=0
-MiniBarsTargetResizeHandle.scripts.OnMouseDown(nil,'LeftButton')
+MiniAuraBarsTargetResizeHandle.scripts.OnMouseDown(nil,'LeftButton')
 cursorX=160; cursorY=-60; events.scripts.OnUpdate(events,0.5)
 assert(container.groups.HARMFUL.layout.elementWidth==320)
 assert(container.groups.HELPFUL.layout.elementHeight==40)
@@ -89,8 +101,10 @@ for _,r in ipairs(registrations) do
  else assert(r.icon.width==20 and r.name.width==74) end
 end
 mouseDown=false
-SlashCmdList.MINIBARS('lock'); assert(container.visible)
-SlashCmdList.MINIBARS('reset')
+SlashCmdList.MINIAURABARS('lock'); assert(container.visible)
+assert(playerContainer.unit=='player' and playerContainer.displayedUnit=='player',
+ 'Locking previews rebound player debuffs to target')
+SlashCmdList.MINIAURABARS('reset')
 assert(container.groups.HARMFUL.layout.elementWidth==160)
 assert(container.groups.HELPFUL.layout.elementHeight==20)
 assert(rawReads==0)
@@ -98,17 +112,17 @@ print('PASS: native target binding under denied aura queries, restricted buttons
 ''')
 
 # Failed module construction must leave a usable addon and an actionable diagnostic.
-exec(Path('.lua-test-support.py').read_text())
+exec((Path(__file__).resolve().parent / '.lua-test-support.py').read_text())
 lua.execute('''
 C_AddOns={LoadAddOn=function() error('Test module unavailable') end}
 local events
 for _,f in ipairs(frames) do if f.scripts.OnEvent then events=f end end
-events.scripts.OnEvent(events,'ADDON_LOADED','MiniBars')
+events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars')
 local output={}
 print=function(message) output[#output+1]=message end
-SlashCmdList.MINIBARS('debug')
+SlashCmdList.MINIAURABARS('debug')
 assert(table.concat(output,' ').find(table.concat(output,' '),'Test module unavailable',1,true))
-SlashCmdList.MINIBARS('unlock')
-assert(MiniBarsDB.locked==false)
+SlashCmdList.MINIAURABARS('unlock')
+assert(MiniAuraBarsDB.locked==false)
 ''')
 print('PASS: native initialization failure remains diagnosable and previews work')

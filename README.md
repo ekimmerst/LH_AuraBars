@@ -1,26 +1,35 @@
-# MiniBars
+# MiniAuraBars
 
-Paladin-, Schurken-, Krieger- und Hexer-Buff- und Cooldown-Balken für WoW Forever Beta (Interface 16001). Buffs erscheinen erst bei weniger als drei Minuten Restlaufzeit, unabhängig von ihrer Gesamtdauer. Dies gilt auch für Talent-Procs und empfangene Buffs bei Schurken, Kriegern und Hexern sowie geschätzte Paladin-Siegel. Permanente Auren werden ausgeblendet. Cooldowns erscheinen unabhängig von ihrer Restlaufzeit. Die Anzeige setzt ein lebendes, angreifbares Ziel voraus. Laufzeiten stammen aus den aktiven Buffs des Clients. Bekannte Paladin-Fähigkeiten werden über lokalisierte Zaubernamen erkannt, neue Fähigkeiten zusätzlich aus den Klassenabschnitten des Zauberbuchs. Bei allen vier unterstützten Klassen werden Cooldowns aktiver Fähigkeiten aus den Klassenabschnitten und dem allgemeinen Zauberbuchabschnitt automatisch erfasst, einschließlich Volksfähigkeiten und unabhängig von Rang und Clientsprache. Zeitlich begrenzte Buffs dieser Volksfähigkeiten werden ebenfalls angezeigt.
+Buff and spell cooldown bars for Paladins, Rogues, Warriors and Warlocks in WoW Forever Beta (Interface 16001). Buffs appear when less than three minutes remain, regardless of their total duration. This includes talent procs, received buffs and estimated Paladin seals. Permanent auras are hidden. Cooldowns appear regardless of remaining time. The player display requires a living, attackable target. Buff durations come from the client's active auras. Localized spell names cover known Paladin abilities and their ranks; class spellbook sections provide additional abilities. Active ability cooldowns are discovered from class and General spellbook sections for all four supported classes, including racial abilities, regardless of rank or client language. Timed racial buffs are also shown.
 
-Die Spielergruppe erscheint rechts neben der Bildschirmmitte. Eine zweite Gruppe links neben der Bildschirmmitte zeigt zeitlich begrenzte Buffs und Debuffs des aktuellen Ziels, auch auf freundlichen Zielen und unabhängig vom Wirker. Auf Clients mit der nativen AuraContainer-API verwaltet der Client selbst Auren, Namen, Icons, Restzeit und Füllstand; MiniBars liest ihre geschützten Daten nicht aus. Permanente Auren bleiben ausgeblendet. Ziel-Buffs sind goldfarben, Ziel-Debuffs rot. Beim Zielwechsel aktualisiert der Client die Anzeige. Ohne native API bleibt die bisherige Abfrage als Fallback bestehen; diese kann bei geschützten Zielauren gesperrt sein.
+The player group appears to the right of the screen center. A second group on the left shows timed buffs and debuffs on the current target, including friendly targets and auras from any caster. When the native AuraContainer API is available, the client manages auras, names, icons, remaining time and bar fill; MiniAuraBars does not read protected aura data. Permanent auras remain hidden. Target buffs are gold and target debuffs are red. The client updates the display when targets change. Older aura queries remain available as a fallback where the native API is unavailable; protected target auras may block these queries.
 
-Die Zuordnung richtet sich nach der betroffenen Einheit, nicht nach dem Wirker: Gruppe 1 zeigt ausschließlich Buffs und Debuffs auf `player` sowie die Cooldowns der eigenen Fähigkeiten. Auch empfangene Buffs werden beim Paladin berücksichtigt. Spieler-Debuffs sind rot und verwenden, sofern verfügbar, einen eigenen nativen AuraContainer oberhalb der Spieler-Buffs und Cooldowns; andernfalls werden sie über `HARMFUL` auf `player` gelesen. Native Spieler-Debuffs erscheinen für jede positive Gesamtdauer, ohne Dreiminutengrenze oder Blinken. Die bestehende Voraussetzung eines lebenden angreifbaren Ziels für die Spieleranzeige bleibt erhalten. Gruppe 2 bindet ausschließlich `target`. Eigene auf dem Target liegende Debuffs gehören daher in Gruppe 2. Echte Cooldowns fremder Einheiten sind über die verwendete Client-API nicht verfügbar und werden nicht geschätzt oder durch Spieler-Cooldowns ersetzt. Aura-Restzeiten sind keine Fähigkeits-Cooldowns.
+Groups follow the affected unit: group 1 shows buffs and debuffs on `player` and the player's own ability cooldowns, including buffs received from other players. Player debuffs are red and use a separate native AuraContainer above buffs and cooldowns when available; otherwise they use `HARMFUL` queries on `player`. Native player debuffs appear for any positive total duration, without the three-minute threshold or blinking. The player display still requires a living, attackable target. Group 2 binds only to `target`, including the player's debuffs on that target. Other units' actual cooldowns are unavailable through the client API and are not estimated or replaced with player cooldowns. Aura timers represent remaining aura duration.
 
-Die native Zielanzeige zeigt alle zeitlich begrenzten Auren, auch über drei Minuten Restzeit. Die API bietet hier nur einen Filter nach Gesamtdauer, keinen nach Restzeit. Debuffs stehen im unteren, Buffs im oberen Block; innerhalb jedes Blocks stehen die längeren Restzeiten oben. Das bisherige Blinken unter drei Sekunden und die dynamische orange Warnfarbe entfallen für native Zielauren. Die Spielergruppe und die Testbalken behalten ihr bisheriges Verhalten.
+Native target bars show all timed auras, including those with more than three minutes remaining. This API filters by total duration only. Debuffs occupy the lower block and buffs the upper block; longer remaining durations appear higher within each block. Native target auras do not blink below three seconds or use the dynamic orange warning color. Player bars and preview bars retain their existing behavior.
 
-Breite, Smooth-Textur und Rahmen entsprechen MiniExpBar. Die Schriftgröße bleibt für Namen und Zeitangaben bei 12 mit Kontur, genau wie in MiniExpBar, unabhängig von der Balkengröße. Die Textur liegt auch in MiniBars, sodass MiniExpBar nicht zwingend aktiviert sein muss. Beide Gruppen wachsen nach oben; die Position des untersten Balkens bleibt beim Hinzufügen und Entfernen fixiert. Die Spielergruppe sortiert nach absteigender Restdauer und blinkt in den letzten drei Sekunden. Ausgelaufene oder entfernte Auren verschwinden.
+Width, Smooth texture and borders match MiniExpBar. Names and timers use an outlined 12-point font regardless of bar size. The texture is bundled with MiniAuraBars, so MiniExpBar does not need to be enabled. Both groups grow upward, keeping the bottom bar fixed as bars appear and disappear. Player bars sort by descending remaining duration and blink during the final three seconds. Expired or removed auras disappear.
 
-- `/minibars unlock`: je drei dauerhafte Testbalken für Spieler und Ziel anzeigen, auch ohne Ziel. Jede Gruppe mit linker Maustaste separat verschieben. Rechts unterhalb jeder Gruppe erscheint ein kleiner Kreis: mit linker Maustaste gedrückt halten und ziehen, um ihre Breite und Höhe unabhängig zwischen 50 % und 200 % der Standardgröße zu ändern: horizontal für die Breite, vertikal für die Höhe. Die Balken schließen vertikal direkt aneinander an, die Schriftgröße bleibt bei 12. Links neben jedem Balken steht das passende quadratische Icon mit 3 UI-Einheiten Abstand und derselben Höhe wie der Balken.
-- `/minibars lock`: beide Gruppen fixieren und Testbalken ausblenden.
-- `/minibars synch on`: Breite und Höhe beider Gruppen synchronisieren. Beim Einschalten übernimmt die Zielgruppe die aktuelle Größe der Spielergruppe. Danach werden Größenänderungen an jeder der beiden Gruppen sofort auf die andere übertragen; ihre Positionen bleiben unabhängig.
-- `/minibars synch off`: Breite und Höhe wieder separat einstellen (Standard). Die Einstellung wird pro Charakter gespeichert.
-- `/minibars reset`: Standardbreite (wie MiniExpBar), Standardhöhe (20 UI-Einheiten) und Standardpositionen beider Gruppen wiederherstellen. Der aktuelle Sperrstatus bleibt erhalten.
+- `/miniaurabars unlock`: show three persistent preview bars per group, even without a target. Player and Target headers appear 8 UI units above their groups while unlocked and disappear when locked. Left-drag each group to move it independently. Left-drag the small circle below the right side of each group to resize width horizontally and height vertically, independently between 50% and 200% of the default size. Bars touch vertically and retain the 12-point font. Each bar has a square icon on its left, matching its height with a gap of 3 UI units.
+- `/miniaurabars lock`: lock both groups and hide preview bars.
+- `/miniaurabars synch on`: synchronize group width and height. The target group initially adopts the player group's size; subsequent resizing of either group updates both. Positions remain independent.
+- `/miniaurabars synch off`: resize groups independently (default). Saved per character.
+- `/miniaurabars reset`: restore default width (matching MiniExpBar), height (20 UI units) and positions for both groups. The lock state is preserved.
+- `/miniaurabars debug`: print target aura API diagnostics in chat.
 
-Position und Größe werden je Gruppe separat pro Charakter gespeichert; der Sperrstatus gilt für beide Gruppen. Nach der Installation den Client vollständig neu starten und MiniBars in der AddOn-Liste aktivieren.
+Position and size are saved separately for each group and character; both groups share the lock state. After installation, fully restart the client and enable MiniAuraBars in the AddOn list. Settings use the per-character `MiniAuraBarsDB` saved variable.
 
-Validierung: Lua-5.1-Tests mit simulierten WoW-APIs für Sortierung, Restzeit, Füllstand, Blinken, Entfernen, Testbalken, Sperre, Breite und Position. Ein Live-Test in der Beta steht aus.
+Validation: Lua 5.1 tests with simulated WoW APIs cover sorting, remaining time, bar fill, blinking, removal, preview bars, locking, width and position. Live beta validation of this rename is pending.
 
 ## Changelog
+
+### 1.5.4 — 2026-10-16
+
+- Reassert each native container's explicit player/target binding during rendering and after visibility changes; refresh player debuffs when shown again.
+- Explicitly refresh native target auras on every target change, including switches between two visible targets.
+- Added regression scenarios for a changed unit binding during show, locking previews, and refreshing an already visible target. The reported cross-group display was clarified as swapped groups by the user.
+- Added Player and Target headers above unlocked groups; confirmed working in the live client.
+- Moved Python test scripts into `_tests` with script-relative paths.
 
 ### 1.5.3 — 2026-10-15
 
@@ -49,7 +58,7 @@ Validierung: Lua-5.1-Tests mit simulierten WoW-APIs für Sortierung, Restzeit, F
 
 ### 1.4.4 — 2026-10-15
 
-- Added `/minibars debug` to report target debuff API availability, errors, counts, readable fields and hidden fields in chat. Run while the target has a debuff to diagnose the live beta client; no hidden values are converted or compared.
+- Added `/miniaurabars debug` to report target debuff API availability, errors, counts, readable fields and hidden fields in chat. Run while the target has a debuff to diagnose the live beta client; no hidden values are converted or compared.
 
 ### 1.4.3 — 2026-10-15
 
@@ -59,7 +68,7 @@ Validierung: Lua-5.1-Tests mit simulierten WoW-APIs für Sortierung, Restzeit, F
 
 ### 1.4.2 — 2026-10-15
 
-- Added `/minibars synch on|off` to synchronize group width and height while keeping positions independent; defaults to off and persists per character.
+- Added `/miniaurabars synch on|off` to synchronize group width and height while keeping positions independent; defaults to off and persists per character.
 - Fall back to indexed and legacy aura queries when the batch API is unavailable. Target auras no longer require readable spell IDs when their names and timers are readable.
 - Retain known target timers through incomplete/restricted scans without carrying them across target changes. Fully hidden newly applied auras still require readable client data.
 - Added target aura regression coverage for Paladin, Rogue, Warrior, and Warlock, plus synchronization and reload tests.

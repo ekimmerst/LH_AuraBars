@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 # Reuse the existing Lua 5.1 WoW UI mock without its Paladin assertions.
-exec(Path('.lua-test-support.py').read_text())
+exec((Path(__file__).resolve().parent / '.lua-test-support.py').read_text())
 lua.execute('''
 local events
 for _, f in ipairs(frames) do if f.scripts.OnEvent then events=f end end
@@ -22,7 +22,7 @@ C_Spell={GetSpellName=function(id) return 'Spell'..id end,
  GetSpellCooldown=function(id) return raw[id] or {startTime=0,duration=0,isEnabled=true} end}
 local data={}
 C_UnitAuras={GetUnitAuras=function(unit,filter) if unit=="target" or filter=="HARMFUL" then return {} end return data end}
-events.scripts.OnEvent(events,'ADDON_LOADED','MiniBars')
+events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars')
 data={{name='Shadow Ward',spellId=6229,duration=30,expirationTime=130},
  {name='Proc',spellId=999999,duration=120,expirationTime=220},
  {name='Demon Armor',spellId=706,duration=0,expirationTime=0}}

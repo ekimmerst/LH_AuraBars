@@ -1,5 +1,5 @@
 from pathlib import Path
-exec(Path('.lua-test-support.py').read_text())
+exec((Path(__file__).resolve().parent / '.lua-test-support.py').read_text())
 lua.execute('''
 local events
 for _,f in ipairs(frames) do if f.scripts.OnEvent then events=f end end
@@ -22,9 +22,9 @@ local function shown(parent)
  end
  return names,count
 end
-events.scripts.OnEvent(events,'ADDON_LOADED','MiniBars')
-local player,pn=shown(MiniBarsFrame)
-local target,tn=shown(MiniBarsTargetFrame)
+events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars')
+local player,pn=shown(MiniAuraBarsFrame)
+local target,tn=shown(MiniAuraBarsTargetFrame)
 assert(pn==3 and player['Received buff'] and player['Player debuff'] and player['Spell1310898'])
 assert(tn==2 and target['Target buff'] and target['Target debuff'])
 assert(not target['Spell1310898'],'Player cooldown leaked into target group')
@@ -32,13 +32,13 @@ assert(player['Player debuff'].fill.color[1]==0.9)
 -- A target cast must never start a player cooldown.
 cooling=false; events.scripts.OnEvent(events,'SPELL_UPDATE_COOLDOWN')
 events.scripts.OnEvent(events,'UNIT_SPELLCAST_SUCCEEDED','target','cast',1310898)
-player,pn=shown(MiniBarsFrame); assert(pn==2 and not player['Spell1310898'])
+player,pn=shown(MiniAuraBarsFrame); assert(pn==2 and not player['Spell1310898'])
 data.player.HARMFUL={}; events.scripts.OnEvent(events,'UNIT_AURA','player')
-player,pn=shown(MiniBarsFrame); assert(pn==1 and player['Received buff'])
-target,tn=shown(MiniBarsTargetFrame); assert(tn==2)
+player,pn=shown(MiniAuraBarsFrame); assert(pn==1 and player['Received buff'])
+target,tn=shown(MiniAuraBarsTargetFrame); assert(tn==2)
 data.target={HELPFUL={},HARMFUL={}}
 events.scripts.OnEvent(events,'PLAYER_TARGET_CHANGED')
-target,tn=shown(MiniBarsTargetFrame); assert(tn==0)
-player,pn=shown(MiniBarsFrame); assert(pn==1)
+target,tn=shown(MiniAuraBarsTargetFrame); assert(tn==0)
+player,pn=shown(MiniAuraBarsFrame); assert(pn==1)
 print('PASS: player/target aura ownership, received Paladin buffs, player debuffs, cooldown isolation, removal and target change')
 ''')

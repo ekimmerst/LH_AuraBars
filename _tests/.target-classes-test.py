@@ -1,7 +1,7 @@
 from pathlib import Path
 
 for class_name, dot_id in [('PALADIN', 20187), ('ROGUE', 703), ('WARRIOR', 772), ('WARLOCK', 172)]:
-    exec(Path('.lua-test-support.py').read_text())
+    exec((Path(__file__).resolve().parent / '.lua-test-support.py').read_text())
     lua.globals().TEST_CLASS, lua.globals().DOT_ID = class_name, dot_id
     lua.execute('''
     UnitClass=function() return TEST_CLASS,TEST_CLASS end
@@ -10,7 +10,7 @@ for class_name, dot_id in [('PALADIN', 20187), ('ROGUE', 703), ('WARRIOR', 772),
     local function count()
         local n=0
         for _,f in ipairs(frames) do
-            if f.parent==MiniBarsTargetFrame and rawget(f,'fill') and rawget(f,'visible') then n=n+1 end
+            if f.parent==MiniAuraBarsTargetFrame and rawget(f,'fill') and rawget(f,'visible') then n=n+1 end
         end
         return n
     end
@@ -29,7 +29,7 @@ for class_name, dot_id in [('PALADIN', 20187), ('ROGUE', 703), ('WARRIOR', 772),
         if unit~='target' then return {} end
         return data[filter]
     end,GetAuraDataByIndex=indexed}
-    events.scripts.OnEvent(events,'ADDON_LOADED','MiniBars')
+    events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars')
     assert(count()==3,TEST_CLASS..': target auras or secret spell ID missing')
     C_UnitAuras.GetUnitAuras=function() error('Batch unavailable') end
     events.scripts.OnEvent(events,'UNIT_AURA','target')

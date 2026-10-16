@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-exec(Path('.lua-test-support.py').read_text())
+exec((Path(__file__).resolve().parent / '.lua-test-support.py').read_text())
 lua.execute('''
 local events
 for _, f in ipairs(frames) do if f.scripts.OnEvent then events=f end end
@@ -20,7 +20,7 @@ C_Spell={GetSpellName=function(id) return 'Spell'..id end,
   return {startTime=0,duration=0,isEnabled=true}
  end}
 IsSpellKnown=function() return true end
-events.scripts.OnEvent(events,'ADDON_LOADED','MiniBars')
+events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars')
 for _,class in ipairs({'PALADIN','ROGUE','WARRIOR'}) do
  UnitClass=function() return class,class end
  clock=100

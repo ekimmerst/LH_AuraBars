@@ -1,7 +1,7 @@
 from pathlib import Path
 
 for spell_id in (20572, 33697, 33702):
-    exec(Path('.lua-test-support.py').read_text())
+    exec((Path(__file__).resolve().parent / '.lua-test-support.py').read_text())
     lua.globals().bloodfuryID = spell_id
     lua.execute('''
     UnitClass=function() return 'Warlock','WARLOCK' end
@@ -17,7 +17,7 @@ for spell_id in (20572, 33697, 33702):
     local secret={}
     issecretvalue=function(v) return v==secret end
     C_UnitAuras={GetUnitAuras=function(unit) if unit=="target" then return {} end return secret end}
-    events.scripts.OnEvent(events,'ADDON_LOADED','MiniBars')
+    events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars')
     events.scripts.OnEvent(events,'UNIT_SPELLCAST_SUCCEEDED','pet','cast',bloodfuryID)
     assert(count()==0,'Pet cast must not create timer')
     events.scripts.OnEvent(events,'UNIT_SPELLCAST_SUCCEEDED','player','cast',bloodfuryID)
@@ -32,7 +32,7 @@ for spell_id in (20572, 33697, 33702):
     } end
     events.scripts.OnEvent(events,'UNIT_AURA','player')
     assert(count()==1,'Readable aura duplicated estimate')
-    assert(MiniBarsDB.bloodfuryDuration==20,'Actual duration must be learned')
+    assert(MiniAuraBarsDB.bloodfuryDuration==20,'Actual duration must be learned')
     C_UnitAuras.GetUnitAuras=function(unit) if unit=="target" then return {} end return {} end
     events.scripts.OnEvent(events,'UNIT_AURA','player')
     assert(count()==0,'Readable removal must clear buff')

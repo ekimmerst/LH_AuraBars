@@ -14,7 +14,7 @@ local function SpellIcon(id)
     end
 end
 local MAX_BUFF_REMAINING = 180
-local TEXTURE = "Interface\\AddOns\\MiniBars\\Media\\Smooth.tga"
+local TEXTURE = "Interface\\AddOns\\MiniAuraBars\\Media\\Smooth.tga"
 local active = {}
 local playerDebuffs = {}
 local playerGroup = {rows = {}, visibleCount = 0}
@@ -170,7 +170,7 @@ local function CreateResizeHandle(group)
     circle:SetTexture("Interface\\Buttons\\UI-RadioButton")
     circle:SetTexCoord(0.25, 0.5, 0, 1)
     group.resizeHandle:SetScript("OnMouseDown", function(_, button)
-        if button ~= "LeftButton" or MiniBarsDB.locked then return end
+        if button ~= "LeftButton" or MiniAuraBarsDB.locked then return end
         StopMoving(group)
         local x, y = GetCursorPosition()
         local scale = group.anchor:GetEffectiveScale()
@@ -195,7 +195,7 @@ local function UpdateResize(group)
     -- Change each dimension independently; fixed gaps are excluded from height.
     group.db.widthFactor = math.max(0.5, math.min(2, group.resizing.widthFactor + dx / group.resizing.width))
     group.db.heightFactor = math.max(0.5, math.min(2, group.resizing.heightFactor + dy / group.resizing.height))
-    if MiniBarsDB.synch then SyncSize(group) else UpdateWidth(group) end
+    if MiniAuraBarsDB.synch then SyncSize(group) else UpdateWidth(group) end
 end
 local function CreateRow(group, index, native)
     local row = CreateFrame("Frame", nil, group.anchor,
@@ -208,9 +208,9 @@ local function CreateRow(group, index, native)
         insets = {left = 2, right = 2, top = 2, bottom = 2}})
     row:SetBackdropColor(0, 0, 0, 1)
     row:SetBackdropBorderColor(0.65, 0.59, 0.45, 1)
-    row:EnableMouse(not MiniBarsDB.locked)
+    row:EnableMouse(not MiniAuraBarsDB.locked)
     row:RegisterForDrag("LeftButton")
-    row:SetScript("OnDragStart", function() if not MiniBarsDB.locked then group.anchor:StartMoving() end end)
+    row:SetScript("OnDragStart", function() if not MiniAuraBarsDB.locked then group.anchor:StartMoving() end end)
     row:SetScript("OnDragStop", function() StopMoving(group) end)
     row.fill = CreateFrame("StatusBar", nil, row)
     row.fill:SetPoint("TOPLEFT", INSET, -INSET)
@@ -253,7 +253,7 @@ local function CreateNativeTarget(owner, unit, filters)
         return
     end
     local container = CreateFrame("AuraContainer", nil, owner.anchor, "CustomAuraContainerTemplate")
-    local state = {container = container, rows = {}, filters = filters}
+    local state = {container = container, rows = {}, filters = filters, unit = unit}
     if unit == "player" then nativePlayerDebuffs = state else nativeTarget = state end
     container:SetPoint("BOTTOMLEFT", owner.anchor, "BOTTOMLEFT")
     container:SetSize(1, 1)
@@ -446,11 +446,11 @@ local function Scan()
         for _, buff in ipairs(snapshot) do
             present[buff.name] = true
             if estimatedBloodfury and estimatedBloodfury.name == buff.name then
-                MiniBarsDB.bloodfuryDuration = buff.duration
+                MiniAuraBarsDB.bloodfuryDuration = buff.duration
                 estimatedBloodfury = nil
             end
             if sealNames[buff.name] then
-                MiniBarsDB.sealDurations[buff.name] = buff.duration
+                MiniAuraBarsDB.sealDurations[buff.name] = buff.duration
                 if estimatedSeal and estimatedSeal.name == buff.name then estimatedSeal = nil end
             end
         end
@@ -477,7 +477,7 @@ local function TrackBloodfuryCast(unit, id)
     if not SupportsClass(playerClass) then return end
     local name = AddSpell(id)
     if not name then return end
-    local duration = MiniBarsDB.bloodfuryDuration
+    local duration = MiniAuraBarsDB.bloodfuryDuration
     if type(duration) ~= "number" or duration <= 0 then duration = 15 end
     local now = GetTime()
     estimatedBloodfury = {name = name, spellID = id, duration = duration, expires = now + duration, started = now, key = -999}
@@ -492,7 +492,7 @@ local function TrackSealCast(unit, spellID)
     if class ~= "PALADIN" then return end
     local name = AddSpell(spellID)
     if not name or not sealNames[name] then return end
-    local duration = MiniBarsDB.sealDurations[name]
+    local duration = MiniAuraBarsDB.sealDurations[name]
     -- Baseline for a seal not yet observed; readable auras teach rank/gear changes.
     if type(duration) ~= "number" or duration <= 0 then duration = 30 end
     local now = GetTime()
@@ -557,7 +557,7 @@ local function ScanCooldowns()
                     timer.spellID = id
                     found[name] = timer
                 end
-                MiniBarsDB.cooldownDurations[name] = timer.duration
+                MiniAuraBarsDB.cooldownDurations[name] = timer.duration
             end
         end
     end
@@ -590,14 +590,14 @@ local function TrackCooldownCast(unit, id)
         local base = BaseCooldown(id)
         -- An explicit zero also overrides stale durations learned by older versions.
         if base == 0 then
-            MiniBarsDB.cooldownDurations[name], cooldowns[name] = nil, nil
+            MiniAuraBarsDB.cooldownDurations[name], cooldowns[name] = nil, nil
             return
         end
-        local duration = MiniBarsDB.cooldownDurations[name] or base
+        local duration = MiniAuraBarsDB.cooldownDurations[name] or base
         if not PlainNumber(duration) or duration <= 0 then return end
         local now = GetTime()
         timer = {duration = duration, expires = now + duration, started = now}
-    else MiniBarsDB.cooldownDurations[name] = timer.duration end
+    else MiniAuraBarsDB.cooldownDurations[name] = timer.duration end
     timer.name, timer.kind, timer.key = name, "cooldown", 1000000 + id
     timer.spellID = id
     cooldowns[name] = timer
@@ -702,6 +702,11 @@ local function RenderGroup(group, display, now)
     end
     for index = #display + 1, #group.rows do group.rows[index]:Hide() end
     group.visibleCount = #display
+    if preview and group.visibleCount > 0 then
+        group.header:ClearAllPoints()
+        group.header:SetPoint("BOTTOM", group.rows[1], "TOP", 0, 8)
+        group.header:Show()
+    else group.header:Hide() end
     if group.resizeHandle then
         group.resizeHandle:ClearAllPoints()
         if preview and group.visibleCount > 0 then
@@ -745,6 +750,8 @@ local function Render()
         end
     end
     RenderGroup(playerGroup, display, now)
+    -- Reassert the affected unit after visibility changes as well as while visible.
+    -- Keep the binding independent of the current target and aura caster.
     if nativePlayerDebuffs then
         local state = nativePlayerDebuffs
         local offset = #display * HEIGHT * playerGroup.db.heightFactor
@@ -754,7 +761,12 @@ local function Render()
             state.offset = offset
         end
         local shown = not preview and ok and attackable or false
-        if state.shown ~= shown then state.container:SetShown(shown); state.shown = shown end
+        if state.shown ~= shown then
+            state.container:SetShown(shown)
+            state.shown = shown
+            state.container:SetUnit(state.unit)
+            if shown then state.container:UpdateAllAuras() end
+        else state.container:SetUnit(state.unit) end
     end
     local targetDisplay = {}
     for _, aura in ipairs(targetAuras) do
@@ -764,7 +776,7 @@ local function Render()
     end
     if preview then
         for index, duration in ipairs({8, 15, 30}) do
-            targetDisplay[#targetDisplay + 1] = {name = "Ziel Test " .. index,
+            targetDisplay[#targetDisplay + 1] = {name = "Target Test " .. index,
                 duration = duration, expires = now + duration, key = -index,
                 kind = index == 2 and "debuff" or nil}
         end
@@ -776,28 +788,29 @@ local function Render()
         if nativeTarget.shown ~= shown then
             nativeTarget.shown = shown
             nativeTarget.container:SetShown(shown)
+            nativeTarget.container:SetUnit(nativeTarget.unit)
             if shown then nativeTarget.container:UpdateAllAuras() end
-        end
+        else nativeTarget.container:SetUnit(nativeTarget.unit) end
     end
 end
 local function Initialize()
-    MiniBarsDB = type(MiniBarsDB) == "table" and MiniBarsDB or {}
-    MiniBarsDB.cooldownDurations = type(MiniBarsDB.cooldownDurations) == "table" and MiniBarsDB.cooldownDurations or {}
-    MiniBarsDB.sealDurations = type(MiniBarsDB.sealDurations) == "table" and MiniBarsDB.sealDurations or {}
-    if MiniBarsDB.locked == nil then MiniBarsDB.locked = true end
-    MiniBarsDB.synch = MiniBarsDB.synch == true
+    MiniAuraBarsDB = type(MiniAuraBarsDB) == "table" and MiniAuraBarsDB or {}
+    MiniAuraBarsDB.cooldownDurations = type(MiniAuraBarsDB.cooldownDurations) == "table" and MiniAuraBarsDB.cooldownDurations or {}
+    MiniAuraBarsDB.sealDurations = type(MiniAuraBarsDB.sealDurations) == "table" and MiniAuraBarsDB.sealDurations or {}
+    if MiniAuraBarsDB.locked == nil then MiniAuraBarsDB.locked = true end
+    MiniAuraBarsDB.synch = MiniAuraBarsDB.synch == true
     -- Migrate the earlier uniform setting without changing the saved appearance.
-    local previous = type(MiniBarsDB.sizeFactor) == "number" and MiniBarsDB.sizeFactor or 1
-    MiniBarsDB.widthFactor = type(MiniBarsDB.widthFactor) == "number" and MiniBarsDB.widthFactor or previous
-    MiniBarsDB.heightFactor = type(MiniBarsDB.heightFactor) == "number" and MiniBarsDB.heightFactor or previous
-    MiniBarsDB.widthFactor = math.max(0.5, math.min(2, MiniBarsDB.widthFactor))
-    MiniBarsDB.heightFactor = math.max(0.5, math.min(2, MiniBarsDB.heightFactor))
-    MiniBarsDB.sizeFactor = nil
-    preview = not MiniBarsDB.locked
-    MiniBarsDB.target = type(MiniBarsDB.target) == "table" and MiniBarsDB.target or {}
-    playerGroup.db, targetGroup.db = MiniBarsDB, MiniBarsDB.target
-    playerGroup.frameName, playerGroup.handleName = "MiniBarsFrame", "MiniBarsResizeHandle"
-    targetGroup.frameName, targetGroup.handleName = "MiniBarsTargetFrame", "MiniBarsTargetResizeHandle"
+    local previous = type(MiniAuraBarsDB.sizeFactor) == "number" and MiniAuraBarsDB.sizeFactor or 1
+    MiniAuraBarsDB.widthFactor = type(MiniAuraBarsDB.widthFactor) == "number" and MiniAuraBarsDB.widthFactor or previous
+    MiniAuraBarsDB.heightFactor = type(MiniAuraBarsDB.heightFactor) == "number" and MiniAuraBarsDB.heightFactor or previous
+    MiniAuraBarsDB.widthFactor = math.max(0.5, math.min(2, MiniAuraBarsDB.widthFactor))
+    MiniAuraBarsDB.heightFactor = math.max(0.5, math.min(2, MiniAuraBarsDB.heightFactor))
+    MiniAuraBarsDB.sizeFactor = nil
+    preview = not MiniAuraBarsDB.locked
+    MiniAuraBarsDB.target = type(MiniAuraBarsDB.target) == "table" and MiniAuraBarsDB.target or {}
+    playerGroup.db, targetGroup.db = MiniAuraBarsDB, MiniAuraBarsDB.target
+    playerGroup.frameName, playerGroup.handleName = "MiniAuraBarsFrame", "MiniAuraBarsResizeHandle"
+    targetGroup.frameName, targetGroup.handleName = "MiniAuraBarsTargetFrame", "MiniAuraBarsTargetResizeHandle"
     for index, group in ipairs(groups) do
         local db = group.db
         for _, dimension in ipairs({"widthFactor", "heightFactor"}) do
@@ -808,6 +821,11 @@ local function Initialize()
         group.anchor:SetFrameStrata("MEDIUM")
         group.anchor:SetMovable(true)
         group.anchor:SetClampedToScreen(true)
+        group.header = group.anchor:CreateFontString(nil, "OVERLAY")
+        group.header:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+        group.header:SetText(index == 1 and "Player" or "Target")
+        group.header:SetTextColor(1, 1, 1, 1)
+        group.header:Hide()
         local p = db.position
         if type(p) == "table" and type(p.x) == "number" and type(p.y) == "number" then
             group.anchor:SetPoint("CENTER", UIParent, "BOTTOMLEFT", p.x, p.y)
@@ -815,7 +833,7 @@ local function Initialize()
         CreateResizeHandle(group)
     end
     initialized = true
-    if MiniBarsDB.synch then SyncSize(playerGroup) end
+    if MiniAuraBarsDB.synch then SyncSize(playerGroup) end
     RefreshSpells()
     for _, group in ipairs(groups) do UpdateWidth(group) end
     local nativeOK, nativeError = pcall(CreateNativeTarget)
@@ -823,7 +841,7 @@ local function Initialize()
         if nativeTarget then nativeTarget.container:Hide() end
         nativeTarget = nil
         nativeTargetError = nativeError
-        print("MiniBars: Native Zielauren konnten nicht initialisiert werden. /minibars debug zeigt den Fehler.")
+        print("MiniAuraBars: Could not initialize native target auras. Use /miniaurabars debug for details.")
     end
     local playerOK, playerError = pcall(CreateNativeTarget, playerGroup, "player", {"HARMFUL"})
     if not playerOK then
@@ -852,7 +870,15 @@ events:SetScript("OnEvent", function(_, event, unit, castGUID, spellID)
         return
     end
     if event == "SPELL_UPDATE_COOLDOWN" then ScanCooldowns(); Render(); return end
-    if event == "PLAYER_TARGET_CHANGED" then ScanTarget(true); Render(); return end
+    if event == "PLAYER_TARGET_CHANGED" then
+        ScanTarget(true)
+        if nativeTarget then
+            nativeTarget.container:SetUnit(nativeTarget.unit)
+            nativeTarget.container:UpdateAllAuras()
+        end
+        Render()
+        return
+    end
     if event == "UNIT_AURA" and unit == "target" then ScanTarget(); Render(); return end
     if event == "SPELLS_CHANGED" or event == "PLAYER_ENTERING_WORLD" then RefreshSpells() end
     for _, group in ipairs(groups) do UpdateWidth(group) end
@@ -875,13 +901,13 @@ events:SetScript("OnUpdate", function(_, elapsed)
     end
     Render()
 end)
-SLASH_MINIBARS1 = "/minibars"
+SLASH_MINIAURABARS1 = "/miniaurabars"
 local function DebugTarget()
     local function describe(value)
-        if IsSecret(value) then return "verborgen" end
+        if IsSecret(value) then return "hidden" end
         if type(value) == "table" then
-            if issecrettable and issecrettable(value) then return "verborgene Tabelle" end
-            return "Tabelle (" .. #value .. ")"
+            if issecrettable and issecrettable(value) then return "hidden table" end
+            return "table (" .. #value .. ")"
         end
         if type(value) == "string" or type(value) == "number" or type(value) == "boolean" then
             return tostring(value)
@@ -889,9 +915,9 @@ local function DebugTarget()
         return type(value)
     end
     local function report(label, query, ...)
-        if not query then print("MiniBars: " .. label .. " fehlt"); return end
+        if not query then print("MiniAuraBars: " .. label .. " unavailable"); return end
         local ok, value, extra = pcall(query, ...)
-        print("MiniBars: " .. label .. (ok and " = " or " FEHLER: ") .. describe(value))
+        print("MiniAuraBars: " .. label .. (ok and " = " or " ERROR: ") .. describe(value))
         if ok and not IsSecret(value) and type(value) == "table" and
             not (issecrettable and issecrettable(value)) then
             local sample = value
@@ -899,28 +925,28 @@ local function DebugTarget()
                 not (issecrettable and issecrettable(value[1])) then sample = value[1] end
             if IsSecret(sample.name) or sample.name ~= nil then
                 for _, field in ipairs({"name", "spellId", "sourceUnit", "duration", "expirationTime", "auraInstanceID"}) do
-                    print("MiniBars: " .. field .. " = " .. describe(sample[field]))
+                    print("MiniAuraBars: " .. field .. " = " .. describe(sample[field]))
                 end
             elseif type(extra) == "boolean" then
-                print("MiniBars: unvollstaendig = " .. tostring(extra))
+                print("MiniAuraBars: incomplete = " .. tostring(extra))
             end
         end
     end
-    print("MiniBars: Target-Diagnose 1.5.3")
-    print("MiniBars: Native Zielauren = " .. (nativeTarget and "aktiv" or "inaktiv"))
-    print("MiniBars: Native Spieler-Debuffs = " .. (nativePlayerDebuffs and "aktiv" or "inaktiv"))
-    if nativePlayerError then print("MiniBars: Spieler-Debuffs Initialisierung: " .. describe(nativePlayerError)) end
-    if nativeTargetError then print("MiniBars: Native Initialisierung: " .. describe(nativeTargetError)) end
-    report("Ziel vorhanden", UnitExists, "target")
+    print("MiniAuraBars: Target diagnostics 1.5.4")
+    print("MiniAuraBars: Native target auras = " .. (nativeTarget and "active" or "inactive"))
+    print("MiniAuraBars: Native player debuffs = " .. (nativePlayerDebuffs and "active" or "inactive"))
+    if nativePlayerError then print("MiniAuraBars: Player debuff initialization: " .. describe(nativePlayerError)) end
+    if nativeTargetError then print("MiniAuraBars: Native initialization: " .. describe(nativeTargetError)) end
+    report("Target exists", UnitExists, "target")
     report("Batch HARMFUL", C_UnitAuras and C_UnitAuras.GetUnitAuras, "target", "HARMFUL")
     report("Index HARMFUL", C_UnitAuras and C_UnitAuras.GetAuraDataByIndex, "target", 1, "HARMFUL")
     report("UnitDebuff", UnitDebuff, "target", 1)
     report("UnitAura", UnitAura, "target", 1, "HARMFUL")
-    report("Gesammelt HARMFUL", CollectAuras, "target", "HARMFUL")
-    report("Verwertbar HARMFUL", BuildSnapshot, "target", "HARMFUL")
-    print("MiniBars: Zielbalken = " .. targetGroup.visibleCount)
+    report("Collected HARMFUL", CollectAuras, "target", "HARMFUL")
+    report("Usable HARMFUL", BuildSnapshot, "target", "HARMFUL")
+    print("MiniAuraBars: Target bars = " .. targetGroup.visibleCount)
 end
-SlashCmdList.MINIBARS = function(message)
+SlashCmdList.MINIAURABARS = function(message)
     if not initialized then return end
     local command = (message or ""):lower():match("^%s*(.-)%s*$")
     local synch = command:match("^synch%s+(%a+)$")
@@ -928,20 +954,20 @@ SlashCmdList.MINIBARS = function(message)
         DebugTarget()
     elseif synch == "on" or synch == "off" then
         for _, group in ipairs(groups) do FinishResize(group) end
-        MiniBarsDB.synch = synch == "on"
-        if MiniBarsDB.synch then SyncSize(playerGroup) end
+        MiniAuraBarsDB.synch = synch == "on"
+        if MiniAuraBarsDB.synch then SyncSize(playerGroup) end
         Render()
-        print("MiniBars: synch " .. synch)
+        print("MiniAuraBars: synch " .. synch)
     elseif command == "lock" or command == "unlock" then
         for _, group in ipairs(groups) do FinishResize(group); StopMoving(group) end
-        MiniBarsDB.locked = command == "lock"
-        preview = not MiniBarsDB.locked
+        MiniAuraBarsDB.locked = command == "lock"
+        preview = not MiniAuraBarsDB.locked
         for _, group in ipairs(groups) do
             for _, row in ipairs(group.rows) do row:EnableMouse(preview) end
         end
         Scan()
         Render()
-        print(preview and "MiniBars: Entsperrt. Testbalken mit linker Maustaste verschieben." or "MiniBars: Position fixiert.")
+        print(preview and "MiniAuraBars: Unlocked. Left-drag the test bars to move them." or "MiniAuraBars: Position locked.")
     elseif command == "reset" then
         for index, group in ipairs(groups) do
             FinishResize(group)
@@ -955,6 +981,6 @@ SlashCmdList.MINIBARS = function(message)
         end
         Scan()
         Render()
-        print("MiniBars: Standardgröße und Standardposition wiederhergestellt.")
-    else print("MiniBars: /minibars lock | /minibars unlock | /minibars reset | /minibars synch on|off") end
+        print("MiniAuraBars: Default size and position restored.")
+    else print("MiniAuraBars: /miniaurabars lock | /miniaurabars unlock | /miniaurabars reset | /miniaurabars synch on|off") end
 end

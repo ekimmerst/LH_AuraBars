@@ -1,5 +1,5 @@
 from pathlib import Path
-exec(Path('.lua-test-support.py').read_text())
+exec((Path(__file__).resolve().parent / '.lua-test-support.py').read_text())
 lua.execute('''
 UnitClass=function() return 'Warlock','WARLOCK' end
 local events
@@ -7,7 +7,7 @@ for _,f in ipairs(frames) do if f.scripts.OnEvent then events=f end end
 local function rows()
  local result={}
  for _,f in ipairs(frames) do
-  if f.parent==MiniBarsTargetFrame and rawget(f,'fill') and rawget(f,'visible') then result[#result+1]=f end
+  if f.parent==MiniAuraBarsTargetFrame and rawget(f,'fill') and rawget(f,'visible') then result[#result+1]=f end
  end
  return result
 end
@@ -16,7 +16,7 @@ C_UnitAuras={GetUnitAuras=function() return {} end,
  GetAuraDataByIndex=function(unit,index,filter)
   if unit=='target' and filter=='HARMFUL' then return data[index] end
  end}
-events.scripts.OnEvent(events,'ADDON_LOADED','MiniBars')
+events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars')
 assert(#rows()==1,'Empty batch hid indexed DoT / missing duration hid own DoT')
 assert(rows()[1].fill.maximum==18 and rows()[1].fill.value==18)
 clock=110; events.scripts.OnUpdate(events,0.5)
@@ -45,12 +45,12 @@ C_UnitAuras.GetUnitAuras=function()
  return {{name=secret,spellId=secret,duration=secret,expirationTime=secret,sourceUnit=secret}}
 end
 C_UnitAuras.GetAuraDataByIndex=function() error('Test API denied') end
-SlashCmdList.MINIBARS('debug')
+SlashCmdList.MINIAURABARS('debug')
 print=originalPrint
 local diagnostic=table.concat(output,'\\n')
-assert(diagnostic:find('Target%-Diagnose 1.5.2'))
-assert(diagnostic:find('name = verborgen',1,true))
-assert(diagnostic:find('FEHLER:',1,true))
-assert(diagnostic:find('Verwertbar HARMFUL',1,true))
+assert(diagnostic:find('Target diagnostics 1.5.4',1,true))
+assert(diagnostic:find('name = hidden',1,true))
+assert(diagnostic:find('ERROR:',1,true))
+assert(diagnostic:find('Usable HARMFUL',1,true))
 print('PASS: Warlock missing timers, empty batch, nil index, countdown, expiration, removal, real timers and target changes')
 ''')

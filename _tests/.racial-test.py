@@ -2,7 +2,7 @@ from pathlib import Path
 
 # Fresh Lua runtime per supported class.
 for class_name in ('PALADIN', 'ROGUE', 'WARRIOR', 'WARLOCK'):
-    exec(Path('.lua-test-support.py').read_text())
+    exec((Path(__file__).resolve().parent / '.lua-test-support.py').read_text())
     lua.globals().TEST_CLASS = class_name
     lua.execute('''
     local events
@@ -21,7 +21,7 @@ for class_name in ('PALADIN', 'ROGUE', 'WARRIOR', 'WARLOCK'):
       if id==20572 and running then return {startTime=100,duration=120,isEnabled=true} end
       return {startTime=0,duration=0,isEnabled=true}
      end}
-    events.scripts.OnEvent(events,'ADDON_LOADED','MiniBars'); assert(count()==1,'Legacy General racial cooldown missing')
+    events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars'); assert(count()==1,'Legacy General racial cooldown missing')
     running=false; events.scripts.OnEvent(events,'SPELL_UPDATE_COOLDOWN'); assert(count()==0)
     Enum={SpellBookSpellBank={Player=0}}
     C_SpellBook={GetNumSpellBookSkillLines=function() return 2 end,

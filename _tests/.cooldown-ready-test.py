@@ -1,12 +1,12 @@
 from pathlib import Path
-exec(Path('.lua-test-support.py').read_text())
+exec((Path(__file__).resolve().parent / '.lua-test-support.py').read_text())
 lua.execute('''
 local events
 for _, f in ipairs(frames) do if f.scripts.OnEvent then events=f end end
 local function count()
  local n=0
  for _,f in ipairs(frames) do
-  if f.parent==MiniBarsFrame and rawget(f,'fill') and rawget(f,'visible') then n=n+1 end
+  if f.parent==MiniAuraBarsFrame and rawget(f,'fill') and rawget(f,'visible') then n=n+1 end
  end
  return n
 end
@@ -23,11 +23,11 @@ C_Spell={GetSpellName=function(id) return 'Spell'..id end,
   return {startTime=0,duration=0,isEnabled=true}
  end}
 GetSpellBaseCooldown=function(id) return id==6789 and 120000 or 0 end
-events.scripts.OnEvent(events,'ADDON_LOADED','MiniBars')
+events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars')
 for _,modeValue in ipairs({'ready','gcd','hidden'}) do
  mode=modeValue
  for _,id in ipairs({172,348}) do
-  MiniBarsDB.cooldownDurations['Spell'..id]=18
+  MiniAuraBarsDB.cooldownDurations['Spell'..id]=18
   events.scripts.OnEvent(events,'UNIT_SPELLCAST_SUCCEEDED','player','cast',id)
   assert(count()==0,mode..' created false DoT cooldown')
  end
