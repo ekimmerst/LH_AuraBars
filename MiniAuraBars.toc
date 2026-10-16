@@ -1,8 +1,8 @@
 ## Interface: 16001
 ## Title: MiniAuraBars
-## Notes: Paladin, rogue, warrior and warlock buff and spell cooldown bars matching MiniExpBar.
+## Notes: Paladin, rogue, warrior, warlock, priest and hunter buff and spell cooldown bars matching MiniExpBar.
 ## Author: MiniAuraBars
-## Version: 1.5.4
+## Version: 1.5.7
 ## SavedVariablesPerCharacter: MiniAuraBarsDB
 
 MiniAuraBars.lua

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-for class_name, dot_id in [('PALADIN', 20187), ('ROGUE', 703), ('WARRIOR', 772), ('WARLOCK', 172)]:
+for class_name, dot_id in [('PALADIN', 20187), ('ROGUE', 703), ('WARRIOR', 772), ('WARLOCK', 172), ('PRIEST', 589), ('HUNTER', 1978)]:
     exec((Path(__file__).resolve().parent / '.lua-test-support.py').read_text())
     lua.globals().TEST_CLASS, lua.globals().DOT_ID = class_name, dot_id
     lua.execute('''

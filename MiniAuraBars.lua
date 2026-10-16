@@ -24,13 +24,13 @@ local targetAuras = {}
 local untimedTargetAuras, seenUntimedTargetAuras = {}, {}
 local warlockDebuffDurations = {}
 local nativeTarget, nativeTargetError
-local nativePlayerDebuffs, nativePlayerError
+local nativePlayerAuras, nativePlayerError
 local UpdateNativeTargetSize
 local initialized, preview = false, false
 local names, spells = {}, {}
 local playerClass
 local function SupportsClass(class)
-    return class == "PALADIN" or class == "ROGUE" or class == "WARRIOR" or class == "WARLOCK"
+    return class == "PALADIN" or class == "ROGUE" or class == "WARRIOR" or class == "WARLOCK" or class == "PRIEST" or class == "HUNTER"
 end
 local sealNames, estimatedSeal = {}, nil
 local estimatedBloodfury
@@ -145,7 +145,7 @@ local function UpdateWidth(group)
         row.time:SetWidth(42)
     end
     if group == targetGroup and nativeTarget then UpdateNativeTargetSize() end
-    if group == playerGroup and nativePlayerDebuffs then UpdateNativeTargetSize(nativePlayerDebuffs, playerGroup) end
+    if group == playerGroup and nativePlayerAuras then UpdateNativeTargetSize(nativePlayerAuras, playerGroup) end
 end
 local function FinishResize(group)
     if not group.resizing then return end
@@ -254,7 +254,10 @@ local function CreateNativeTarget(owner, unit, filters)
     end
     local container = CreateFrame("AuraContainer", nil, owner.anchor, "CustomAuraContainerTemplate")
     local state = {container = container, rows = {}, filters = filters, unit = unit}
-    if unit == "player" then nativePlayerDebuffs = state else nativeTarget = state end
+    for _, filter in ipairs(filters) do
+        if filter == "HELPFUL" then state.tracksHelpful = true end
+    end
+    if unit == "player" then nativePlayerAuras = state else nativeTarget = state end
     container:SetPoint("BOTTOMLEFT", owner.anchor, "BOTTOMLEFT")
     container:SetSize(1, 1)
     local setAnchor = container.SetFlowLayoutAnchorPoint or container.SetAuraLayoutAnchorPoint
@@ -422,7 +425,7 @@ local function BuildSnapshot(unit, filter)
     return snapshot, incomplete
 end
 local function ScanPlayerDebuffs()
-    if nativePlayerDebuffs then return end
+    if nativePlayerAuras then return end
     local ok, snapshot, incomplete = pcall(BuildSnapshot, "player", "HARMFUL")
     if not ok or not snapshot then return end
     local present = {}
@@ -439,6 +442,11 @@ local function ScanPlayerDebuffs()
 end
 local function Scan()
     ScanPlayerDebuffs()
+    -- The native player container owns buffs even when their fields are secret.
+    if nativePlayerAuras and nativePlayerAuras.tracksHelpful then
+        active, estimatedBloodfury, scanPending = {}, nil, false
+        return
+    end
     local ok, snapshot, incomplete = pcall(BuildSnapshot)
     scanPending = not ok or snapshot == nil or incomplete
     if ok and snapshot then
@@ -736,7 +744,8 @@ local function Render()
         estimatedSeal.expires > now then
         display[#display + 1] = estimatedSeal
     end
-    if ok and attackable and estimatedBloodfury and estimatedBloodfury.expires > now then
+    if ok and attackable and estimatedBloodfury and estimatedBloodfury.expires > now and
+        not (nativePlayerAuras and nativePlayerAuras.tracksHelpful) then
         display[#display + 1] = estimatedBloodfury
     end
     if ok and attackable then
@@ -752,8 +761,8 @@ local function Render()
     RenderGroup(playerGroup, display, now)
     -- Reassert the affected unit after visibility changes as well as while visible.
     -- Keep the binding independent of the current target and aura caster.
-    if nativePlayerDebuffs then
-        local state = nativePlayerDebuffs
+    if nativePlayerAuras then
+        local state = nativePlayerAuras
         local offset = #display * HEIGHT * playerGroup.db.heightFactor
         if state.offset ~= offset then
             state.container:ClearAllPoints()
@@ -843,10 +852,11 @@ local function Initialize()
         nativeTargetError = nativeError
         print("MiniAuraBars: Could not initialize native target auras. Use /miniaurabars debug for details.")
     end
-    local playerOK, playerError = pcall(CreateNativeTarget, playerGroup, "player", {"HARMFUL"})
+    local playerFilters = (playerClass == "PRIEST" or playerClass == "HUNTER") and {"HARMFUL", "HELPFUL"} or {"HARMFUL"}
+    local playerOK, playerError = pcall(CreateNativeTarget, playerGroup, "player", playerFilters)
     if not playerOK then
-        if nativePlayerDebuffs then nativePlayerDebuffs.container:Hide() end
-        nativePlayerDebuffs = nil
+        if nativePlayerAuras then nativePlayerAuras.container:Hide() end
+        nativePlayerAuras = nil
         nativePlayerError = playerError
     end
     Scan()
@@ -880,6 +890,10 @@ events:SetScript("OnEvent", function(_, event, unit, castGUID, spellID)
         return
     end
     if event == "UNIT_AURA" and unit == "target" then ScanTarget(); Render(); return end
+    if event == "UNIT_AURA" and unit == "player" and nativePlayerAuras then
+        nativePlayerAuras.container:SetUnit("player")
+        nativePlayerAuras.container:UpdateAllAuras()
+    end
     if event == "SPELLS_CHANGED" or event == "PLAYER_ENTERING_WORLD" then RefreshSpells() end
     for _, group in ipairs(groups) do UpdateWidth(group) end
     Scan()
@@ -934,8 +948,8 @@ local function DebugTarget()
     end
     print("MiniAuraBars: Target diagnostics 1.5.4")
     print("MiniAuraBars: Native target auras = " .. (nativeTarget and "active" or "inactive"))
-    print("MiniAuraBars: Native player debuffs = " .. (nativePlayerDebuffs and "active" or "inactive"))
-    if nativePlayerError then print("MiniAuraBars: Player debuff initialization: " .. describe(nativePlayerError)) end
+    print("MiniAuraBars: Native player auras = " .. (nativePlayerAuras and "active" or "inactive"))
+    if nativePlayerError then print("MiniAuraBars: Player aura initialization: " .. describe(nativePlayerError)) end
     if nativeTargetError then print("MiniAuraBars: Native initialization: " .. describe(nativeTargetError)) end
     report("Target exists", UnitExists, "target")
     report("Batch HARMFUL", C_UnitAuras and C_UnitAuras.GetUnitAuras, "target", "HARMFUL")

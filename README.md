@@ -1,6 +1,6 @@
 # MiniAuraBars
 
-Buff and spell cooldown bars for Paladins, Rogues, Warriors and Warlocks in WoW Forever Beta (Interface 16001). Buffs appear when less than three minutes remain, regardless of their total duration. This includes talent procs, received buffs and estimated Paladin seals. Permanent auras are hidden. Cooldowns appear regardless of remaining time. The player display requires a living, attackable target. Buff durations come from the client's active auras. Localized spell names cover known Paladin abilities and their ranks; class spellbook sections provide additional abilities. Active ability cooldowns are discovered from class and General spellbook sections for all four supported classes, including racial abilities, regardless of rank or client language. Timed racial buffs are also shown.
+Buff and spell cooldown bars for Paladins, Rogues, Warriors, Warlocks, Priests and Hunters in WoW Forever Beta (Interface 16001). Buffs appear when less than three minutes remain, regardless of their total duration. This includes talent procs, received buffs and estimated Paladin seals. Permanent auras are hidden. Cooldowns appear regardless of remaining time. The player display requires a living, attackable target. Buff durations come from the client's active auras. Localized spell names cover known Paladin abilities and their ranks; class spellbook sections provide additional abilities. Active ability cooldowns are discovered from class and General spellbook sections for all six supported classes, including racial abilities, regardless of rank or client language. Timed racial buffs are also shown.
 
 The player group appears to the right of the screen center. A second group on the left shows timed buffs and debuffs on the current target, including friendly targets and auras from any caster. When the native AuraContainer API is available, the client manages auras, names, icons, remaining time and bar fill; MiniAuraBars does not read protected aura data. Permanent auras remain hidden. Target buffs are gold and target debuffs are red. The client updates the display when targets change. Older aura queries remain available as a fallback where the native API is unavailable; protected target auras may block these queries.
 
@@ -21,7 +21,25 @@ Position and size are saved separately for each group and character; both groups
 
 Validation: Lua 5.1 tests with simulated WoW APIs cover sorting, remaining time, bar fill, blinking, removal, preview bars, locking, width and position. Live beta validation of this rename is pending.
 
+Priests and Hunters use the native player container for both helpful and harmful auras when available. This lets the client display self-cast Renew and other timed buffs even when direct aura reads are protected. Native Priest and Hunter buffs appear for their full timed duration, without the three-minute threshold, warning color or blinking; permanent buffs remain hidden. Cooldowns retain their existing display. Clients without the native API keep the legacy aura-query fallback.
+
 ## Changelog
+
+### 1.5.7 - 2026-10-16
+
+- Added Hunter spellbook discovery for learned abilities, ranks, talents, racial abilities and beta spells. Hunter player buffs and debuffs use native aura containers when available, with the existing legacy fallback. Target buffs and debuffs remain class-independent.
+- Added Hunter legacy/modern spellbook, cooldown, buff, proc, debuff and native protected-aura regression coverage. All simulated Lua 5.1 regression tests pass. Permanent aspects remain hidden. Pet-unit auras and pet ability cooldowns are outside the existing player/target groups. Live beta validation is pending.
+
+### 1.5.6 - 2026-10-16
+
+- Route Priest player buffs through the native player AuraContainer alongside debuffs, avoiding direct reads of protected Renew/aura fields. Refresh the player container on player aura events and retain its explicit player binding.
+- Avoid duplicate legacy buff bars; preserve cooldowns, enemy-target visibility and the fallback for clients without native aura support.
+- Added self-cast Renew application/refresh/removal tests and native Priest coverage with all aura queries denied. Simulated checks pass; live beta confirmation is pending.
+
+### 1.5.5 - 2026-10-16
+
+- Added Priest support to automatic class and General spellbook discovery, including learned ranks, talents, racial abilities and beta spells. Timed buffs, procs and player/target debuffs use the existing class-independent aura handling and visibility rules.
+- Added Priest regression coverage for legacy/modern spellbooks, cooldowns, GCD exclusion, buffs, procs, player debuffs and target aura fallbacks. Simulated Lua 5.1 checks pass; live beta validation is pending.
 
 ### 1.5.4 — 2026-10-16
 
