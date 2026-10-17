@@ -1,12 +1,12 @@
 # MiniAuraBars
 
-Buff and spell cooldown bars for Paladins, Rogues, Warriors, Warlocks, Priests and Hunters in WoW Forever Beta (Interface 16001). Buffs appear when less than three minutes remain, regardless of their total duration. This includes talent procs, received buffs and estimated Paladin seals. Permanent auras are hidden. Cooldowns appear regardless of remaining time. The player display requires a living, attackable target. Buff durations come from the client's active auras. Localized spell names cover known Paladin abilities and their ranks; class spellbook sections provide additional abilities. Active ability cooldowns are discovered from class and General spellbook sections for all six supported classes, including racial abilities, regardless of rank or client language. Timed racial buffs are also shown.
+Buff and spell cooldown bars for Paladins, Rogues, Warriors, Warlocks, Priests and Hunters in WoW Forever Beta (Interface 16001). Buffs appear when at most three minutes remain, regardless of their total duration. This includes talent procs, received buffs and estimated Paladin seals. Permanent auras are hidden. Cooldowns appear regardless of remaining time. The player display requires a living, attackable target. Buff durations come from the client's active auras. Localized spell names cover known Paladin abilities and their ranks; class spellbook sections provide additional abilities. Active ability cooldowns are discovered from class and General spellbook sections for all six supported classes, including racial abilities, regardless of rank or client language. Timed racial buffs are also shown.
 
-The player group appears to the right of the screen center. A second group on the left shows timed buffs and debuffs on the current target, including friendly targets and auras from any caster. When the native AuraContainer API is available, the client manages auras, names, icons, remaining time and bar fill; MiniAuraBars does not read protected aura data. Permanent auras remain hidden. Target buffs are gold and target debuffs are red. The client updates the display when targets change. Older aura queries remain available as a fallback where the native API is unavailable; protected target auras may block these queries.
+The player group appears to the right of the screen center. A second group on the left shows timed buffs and debuffs on the current target, including friendly targets and auras from any caster. When the native AuraContainer API is available, the client manages debuffs, names, icons, remaining time and bar fill; buffs use readable aura queries to enforce the remaining-time threshold. Permanent auras remain hidden. Target buffs are gold and target debuffs are red. The client updates the display when targets change. Older aura queries remain available as a fallback where the native API is unavailable; protected target auras may block these queries.
 
 Groups follow the affected unit: group 1 shows buffs and debuffs on `player` and the player's own ability cooldowns, including buffs received from other players. Player debuffs are red and use a separate native AuraContainer above buffs and cooldowns when available; otherwise they use `HARMFUL` queries on `player`. Native player debuffs appear for any positive total duration, without the three-minute threshold or blinking. The player display still requires a living, attackable target. Group 2 binds only to `target`, including the player's debuffs on that target. Other units' actual cooldowns are unavailable through the client API and are not estimated or replaced with player cooldowns. Aura timers represent remaining aura duration.
 
-Native target bars show all timed auras, including those with more than three minutes remaining. This API filters by total duration only. Debuffs occupy the lower block and buffs the upper block; longer remaining durations appear higher within each block. Native target auras do not blink below three seconds or use the dynamic orange warning color. Player bars and preview bars retain their existing behavior.
+Player and target buffs use readable aura timers and appear only at 180 seconds remaining or less, regardless of total duration. Buffs with protected, unreadable timers cannot be newly displayed. Native containers remain responsible for debuffs; native debuffs retain their full-duration display.
 
 Width, Smooth texture and borders match MiniExpBar. Names and timers use an outlined 12-point font regardless of bar size. The texture is bundled with MiniAuraBars, so MiniExpBar does not need to be enabled. Both groups grow upward, keeping the bottom bar fixed as bars appear and disappear. Player bars sort by descending remaining duration and blink during the final three seconds. Expired or removed auras disappear.
 
@@ -19,11 +19,23 @@ Width, Smooth texture and borders match MiniExpBar. Names and timers use an outl
 
 Position and size are saved separately for each group and character; both groups share the lock state. After installation, fully restart the client and enable MiniAuraBars in the AddOn list. Settings use the per-character `MiniAuraBarsDB` saved variable.
 
-Validation: Lua 5.1 tests with simulated WoW APIs cover sorting, remaining time, bar fill, blinking, removal, preview bars, locking, width and position. Live beta validation of this rename is pending.
+Validation: Lua 5.1 tests with simulated WoW APIs cover sorting, remaining time, bar fill, blinking, removal, preview bars, locking, width and position. The three-minute buff threshold was confirmed working in the live beta client on 2026-10-17.
 
-Priests and Hunters use the native player container for both helpful and harmful auras when available. This lets the client display self-cast Renew and other timed buffs even when direct aura reads are protected. Native Priest and Hunter buffs appear for their full timed duration, without the three-minute threshold, warning color or blinking; permanent buffs remain hidden. Cooldowns retain their existing display. Clients without the native API keep the legacy aura-query fallback.
+All supported classes use the same remaining-time filter for player buffs. Native player and target debuffs remain supported, including protected auras. Cooldowns retain their existing display.
 
 ## Changelog
+
+### 1.5.9 - 2026-10-17
+
+- Show player and target buffs only when their remaining duration is 180 seconds or less, including exactly 180 seconds, for all six supported classes. Long buffs enter the display automatically as their timers cross the threshold; permanent buffs remain hidden.
+- Use readable buff timers instead of native helpful-aura containers, whose filters only support total duration. Newly encountered buffs with protected, unreadable timers cannot be displayed reliably. Native player and target debuffs retain their existing behavior, and cooldowns remain independent of the buff threshold.
+- Place native target debuffs above the target buff rows to prevent overlap.
+- Updated boundary and native-mode regression coverage. All simulated Lua 5.1 regression tests pass; the user confirmed the behavior working in the live beta client.
+
+### 1.5.8 - 2026-10-16
+
+- Rogue player buffs now use the native aura container when available, including protected timed buffs and talent procs. Player debuffs, automatic discovery of learned abilities/ranks/talents/beta spells and target auras remain supported; legacy aura queries remain the fallback. Permanent Stealth remains hidden.
+- Expanded Rogue cooldown and incoming debuff tests and native coverage with all direct aura reads denied. Native Rogue buffs follow the full-duration native display rules described above. Live beta validation is pending.
 
 ### 1.5.7 - 2026-10-16
 

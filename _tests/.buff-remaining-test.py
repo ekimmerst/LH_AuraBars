@@ -21,12 +21,13 @@ C_Spell={GetSpellName=function(id) return 'Spell'..id end,
  end}
 IsSpellKnown=function() return true end
 events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars')
-for _,class in ipairs({'PALADIN','ROGUE','WARRIOR'}) do
+for _,class in ipairs({'PALADIN','ROGUE','WARRIOR','WARLOCK','PRIEST','HUNTER'}) do
  UnitClass=function() return class,class end
  clock=100
  data={{name='Spell20271',spellId=20271,duration=600,expirationTime=280}}
  events.scripts.OnEvent(events,'SPELLS_CHANGED')
- local baseline=count()
+ local baseline=count()-1
+ assert(count()==baseline+1, class..': buff must appear at exactly 180 seconds')
  clock=100.1
  events.scripts.OnUpdate(events,0.1)
  assert(count()==baseline+1, class..': long buff must appear below 180 seconds')

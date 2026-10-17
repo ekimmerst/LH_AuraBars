@@ -245,7 +245,8 @@ end
 -- AuraContainer assign, sort and update the auras inside its secure execution.
 -- No aura fields or secret frame geometry are read back into addon Lua.
 local function CreateNativeTarget(owner, unit, filters)
-    owner, unit, filters = owner or targetGroup, unit or "target", filters or {"HARMFUL", "HELPFUL"}
+    -- Buffs use readable timers: native candidate filters only support total duration.
+    owner, unit, filters = owner or targetGroup, unit or "target", filters or {"HARMFUL"}
     if not C_AddOns or not C_AddOns.LoadAddOn then return end
     C_AddOns.LoadAddOn("Blizzard_AuraContainer")
     if not AuraContainerSortMethod then
@@ -254,9 +255,6 @@ local function CreateNativeTarget(owner, unit, filters)
     end
     local container = CreateFrame("AuraContainer", nil, owner.anchor, "CustomAuraContainerTemplate")
     local state = {container = container, rows = {}, filters = filters, unit = unit}
-    for _, filter in ipairs(filters) do
-        if filter == "HELPFUL" then state.tracksHelpful = true end
-    end
     if unit == "player" then nativePlayerAuras = state else nativeTarget = state end
     container:SetPoint("BOTTOMLEFT", owner.anchor, "BOTTOMLEFT")
     container:SetSize(1, 1)
@@ -442,11 +440,6 @@ local function ScanPlayerDebuffs()
 end
 local function Scan()
     ScanPlayerDebuffs()
-    -- The native player container owns buffs even when their fields are secret.
-    if nativePlayerAuras and nativePlayerAuras.tracksHelpful then
-        active, estimatedBloodfury, scanPending = {}, nil, false
-        return
-    end
     local ok, snapshot, incomplete = pcall(BuildSnapshot)
     scanPending = not ok or snapshot == nil or incomplete
     if ok and snapshot then
@@ -643,14 +636,13 @@ local function HasAttackableTarget()
     return not IsSecret(dead) and not dead
 end
 local function ScanTarget(clear)
-    if nativeTarget then return end
     if clear then untimedTargetAuras = {} end
     seenUntimedTargetAuras = {}
     local previous = clear and {} or targetAuras
     targetAuras = {}
     local ok, exists = pcall(UnitExists, "target")
     if not ok or IsSecret(exists) or not exists then return end
-    for _, filter in ipairs({"HELPFUL", "HARMFUL"}) do
+    for _, filter in ipairs(nativeTarget and {"HELPFUL"} or {"HELPFUL", "HARMFUL"}) do
         local readable, snapshot, incomplete = pcall(BuildSnapshot, "target", filter)
         local present = {}
         if readable and snapshot then
@@ -733,19 +725,19 @@ local function Render()
             end
         end
         for _, buff in ipairs(active) do
-            if buff.expires - now < MAX_BUFF_REMAINING and buff.expires > now and
+            if buff.expires - now <= MAX_BUFF_REMAINING and buff.expires > now and
                 (not estimatedBloodfury or estimatedBloodfury.name ~= buff.name) and
                 (not estimatedSeal or not sealNames[buff.name]) then
                 display[#display + 1] = buff
             end
         end
     end
-    if ok and attackable and estimatedSeal and estimatedSeal.expires - now < MAX_BUFF_REMAINING and
+    if ok and attackable and estimatedSeal and estimatedSeal.expires - now <= MAX_BUFF_REMAINING and
         estimatedSeal.expires > now then
         display[#display + 1] = estimatedSeal
     end
     if ok and attackable and estimatedBloodfury and estimatedBloodfury.expires > now and
-        not (nativePlayerAuras and nativePlayerAuras.tracksHelpful) then
+        estimatedBloodfury.expires - now <= MAX_BUFF_REMAINING then
         display[#display + 1] = estimatedBloodfury
     end
     if ok and attackable then
@@ -779,7 +771,7 @@ local function Render()
     end
     local targetDisplay = {}
     for _, aura in ipairs(targetAuras) do
-        if aura.expires > now and aura.expires - now < MAX_BUFF_REMAINING then
+        if aura.expires > now and aura.expires - now <= MAX_BUFF_REMAINING then
             targetDisplay[#targetDisplay + 1] = aura
         end
     end
@@ -792,6 +784,12 @@ local function Render()
     end
     RenderGroup(targetGroup, targetDisplay, now)
     if nativeTarget then
+        local offset = #targetDisplay * HEIGHT * targetGroup.db.heightFactor
+        if nativeTarget.offset ~= offset then
+            nativeTarget.container:ClearAllPoints()
+            nativeTarget.container:SetPoint("BOTTOMLEFT", targetGroup.anchor, "BOTTOMLEFT", 0, offset)
+            nativeTarget.offset = offset
+        end
         local existsOK, exists = pcall(UnitExists, "target")
         local shown = not preview and existsOK and not IsSecret(exists) and exists == true
         if nativeTarget.shown ~= shown then
@@ -852,7 +850,7 @@ local function Initialize()
         nativeTargetError = nativeError
         print("MiniAuraBars: Could not initialize native target auras. Use /miniaurabars debug for details.")
     end
-    local playerFilters = (playerClass == "PRIEST" or playerClass == "HUNTER") and {"HARMFUL", "HELPFUL"} or {"HARMFUL"}
+    local playerFilters = {"HARMFUL"}
     local playerOK, playerError = pcall(CreateNativeTarget, playerGroup, "player", playerFilters)
     if not playerOK then
         if nativePlayerAuras then nativePlayerAuras.container:Hide() end

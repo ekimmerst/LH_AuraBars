@@ -14,33 +14,38 @@ local function visible()
  return result
 end
 UnitClass=function() return 'Rogue','ROGUE' end
-local ids={2983,1856,13750,14177,1766}
+local ids={2983,1856,13750,14177,1766,5277,14185,14183,13877,2094,408,8643,1725,1966,1857,11305,999999}
 GetSpellTabInfo=function() return 'Rogue',nil,0,#ids end
 GetSpellBookItemInfo=function(index) return 'SPELL',ids[index] end
 local raw={}
 C_Spell={GetSpellName=function(id) return 'Spell'..id end,
  GetSpellCooldown=function(id) return raw[id] or {startTime=0,duration=0,isEnabled=true} end}
 local data={}
-C_UnitAuras={GetUnitAuras=function(unit,filter) if unit=="target" or filter=="HARMFUL" then return {} end return data end}
+local harmful={}
+C_UnitAuras={GetUnitAuras=function(unit,filter) if unit=="target" then return {} end if filter=="HARMFUL" then return harmful end return data end}
 events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars')
 data={{name='Slice',spellId=5171,duration=30,expirationTime=130},
  {name='Proc',spellId=999999,duration=120,expirationTime=220},
  {name='Stealth',spellId=1784,duration=0,expirationTime=0}}
 events.scripts.OnEvent(events,'UNIT_AURA','player')
 assert(#visible()==2)
+-- Incoming debuffs are tracked independently of spellbook and caster.
+harmful={{name='Poison',spellId=2818,duration=12,expirationTime=112,sourceUnit='target'}}
+events.scripts.OnEvent(events,'UNIT_AURA','player'); assert(#visible()==3)
+harmful={}; events.scripts.OnEvent(events,'UNIT_AURA','player'); assert(#visible()==2)
 for _,id in ipairs(ids) do raw[id]={startTime=100,duration=180,isEnabled=true} end
-events.scripts.OnEvent(events,'SPELL_UPDATE_COOLDOWN'); assert(#visible()==7)
+events.scripts.OnEvent(events,'SPELL_UPDATE_COOLDOWN'); assert(#visible()==2+#ids)
 raw[1766]={startTime=100,duration=1,isEnabled=true,isOnGCD=true}
-events.scripts.OnEvent(events,'SPELL_UPDATE_COOLDOWN'); assert(#visible()==6)
+events.scripts.OnEvent(events,'SPELL_UPDATE_COOLDOWN'); assert(#visible()==1+#ids)
 -- Reset and cached fallback when cooldown data becomes inaccessible.
 raw[1856]={startTime=0,duration=0,isEnabled=true}
-events.scripts.OnEvent(events,'SPELL_UPDATE_COOLDOWN'); assert(#visible()==5)
+events.scripts.OnEvent(events,'SPELL_UPDATE_COOLDOWN'); assert(#visible()==#ids)
 clock=110
 C_Spell.GetSpellCooldown=function() error('blocked') end
 events.scripts.OnEvent(events,'UNIT_SPELLCAST_SUCCEEDED','player','vanish',1856)
-assert(#visible()==6)
+assert(#visible()==1+#ids)
 targetAttackable=false; events.scripts.OnEvent(events,'PLAYER_TARGET_CHANGED'); assert(#visible()==0)
-targetAttackable=true; events.scripts.OnEvent(events,'PLAYER_TARGET_CHANGED'); assert(#visible()==6)
+targetAttackable=true; events.scripts.OnEvent(events,'PLAYER_TARGET_CHANGED'); assert(#visible()==1+#ids)
 -- Modern spellbook: include active spells, exclude passive and off-spec.
 C_Spell.GetSpellCooldown=function(id)
  if id==61304 then return {startTime=0,duration=0,isEnabled=true} end

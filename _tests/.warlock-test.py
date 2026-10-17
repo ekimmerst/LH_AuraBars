@@ -53,10 +53,10 @@ C_SpellBook={GetNumSpellBookSkillLines=function() return 2 end,
 events.scripts.OnEvent(events,'SPELLS_CHANGED'); assert(#visible()==3)
 data={}; events.scripts.OnEvent(events,'UNIT_AURA','player'); assert(#visible()==1)
 clock=131; events.scripts.OnUpdate(events,0.1); assert(#visible()==0)
--- Long buffs become visible only below three minutes remaining.
+-- Long buffs become visible at or below three minutes remaining.
 data={{name='Long Warlock Buff',spellId=999998,duration=1800,expirationTime=400}}
 events.scripts.OnEvent(events,'UNIT_AURA','player'); assert(#visible()==0)
-clock=220; events.scripts.OnUpdate(events,0.1); assert(#visible()==0)
+clock=220; events.scripts.OnUpdate(events,0.1); assert(#visible()==1)
 clock=221; events.scripts.OnUpdate(events,0.1); assert(#visible()==1)
 data={}; events.scripts.OnEvent(events,'UNIT_AURA','player'); assert(#visible()==0)
 print('PASS: warlock buffs/procs, long buffs, permanent filter, legacy/modern spellbook, cooldowns, GCD, reset, blocked cast fallback, target, removal, expiry')
