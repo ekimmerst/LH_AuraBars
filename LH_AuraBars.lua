@@ -28,9 +28,6 @@ local nativePlayerAuras, nativePlayerError
 local UpdateNativeTargetSize
 local initialized, preview = false, false
 local names, spells = {}, {}
-local function SupportsClass(class)
-    return class == "PALADIN" or class == "ROGUE" or class == "WARRIOR" or class == "WARLOCK" or class == "PRIEST" or class == "HUNTER" or class == "SHAMAN"
-end
 local sealNames, estimatedSeal = {}, nil
 local estimatedBloodfury
 local bloodfuryIDs = {[20572] = true, [33697] = true, [33702] = true}
@@ -53,6 +50,15 @@ local function AddCooldownSpell(id)
     local name = AddSpell(id)
     if name then cooldownSpells[id] = name end
 end
+local function AddFlyout(id)
+    if not id or not GetFlyoutInfo or not GetFlyoutSlotInfo then return end
+    local _, _, count, known = GetFlyoutInfo(id)
+    if not known then return end
+    for slot = 1, count do
+        local spellID, overrideID, learned = GetFlyoutSlotInfo(id, slot)
+        if learned then AddCooldownSpell(overrideID and overrideID > 0 and overrideID or spellID) end
+    end
+end
 local function RefreshSpells()
     local _, class = UnitClass("player")
     names, spells, sealNames = {}, {}, {}
@@ -73,7 +79,6 @@ local function RefreshSpells()
             if name then sealNames[name] = true end
         end
     end
-    local supportedClass = SupportsClass(class)
     local known = C_SpellBook and C_SpellBook.IsSpellKnown or IsSpellKnown
     if known then
         for id in pairs(spells) do
@@ -81,28 +86,34 @@ local function RefreshSpells()
             if ok and learned == true then AddCooldownSpell(id) end
         end
     end
-    -- General (the first skill line/tab) supplies racial abilities for every class.
-    -- Supported classes additionally discover all learned class ranks and beta abilities.
+    -- Discover learned abilities in every section for every class, race and faction.
+    -- IDs and localized names come from the character's spellbook, not a whitelist.
     if C_SpellBook and C_SpellBook.GetNumSpellBookSkillLines then
         local bank = Enum.SpellBookSpellBank.Player
-        for line = 1, supportedClass and C_SpellBook.GetNumSpellBookSkillLines() or 1 do
+        local types = Enum.SpellBookItemType
+        for line = 1, C_SpellBook.GetNumSpellBookSkillLines() do
             local info = C_SpellBook.GetSpellBookSkillLineInfo(line)
             if info then
                 for index = info.itemIndexOffset + 1, info.itemIndexOffset + info.numSpellBookItems do
                     local item = C_SpellBook.GetSpellBookItemInfo(index, bank)
-                    if item and item.spellID then
-                        AddSpell(item.spellID)
-                        if not item.isPassive and not item.isOffSpec then AddCooldownSpell(item.spellID) end
+                    if item and not item.isOffSpec then
+                        if types and types.Flyout and item.itemType == types.Flyout then
+                            AddFlyout(item.actionID)
+                        elseif item.spellID and (not types or not item.itemType or item.itemType == types.Spell) then
+                            AddSpell(item.spellID)
+                            if not item.isPassive then AddCooldownSpell(item.spellID) end
+                        end
                     end
                 end
             end
         end
     elseif GetNumSpellTabs and GetSpellTabInfo and GetSpellBookItemInfo then
-        for tab = 1, supportedClass and GetNumSpellTabs() or 1 do
+        for tab = 1, GetNumSpellTabs() do
             local _, _, offset, count = GetSpellTabInfo(tab)
             for index = offset + 1, offset + count do
                 local kind, id = GetSpellBookItemInfo(index, "spell")
-                if kind == "SPELL" then AddCooldownSpell(id) end
+                if kind == "SPELL" then AddCooldownSpell(id)
+                elseif kind == "FLYOUT" then AddFlyout(id) end
             end
         end
     end
@@ -511,6 +522,30 @@ local function BaseCooldown(id)
     if ok and PlainNumber(ms) and ms >= 0 then return ms / 1000 end
 end
 local function ReadCooldown(id)
+    local charges
+    if C_Spell and C_Spell.GetSpellCharges then
+        charges = C_Spell.GetSpellCharges(id)
+    elseif GetSpellCharges then
+        local current, maximum, start, duration, rate = GetSpellCharges(id)
+        if maximum then charges = {currentCharges = current, maxCharges = maximum,
+            cooldownStartTime = start, cooldownDuration = duration, chargeModRate = rate} end
+    end
+    if IsSecret(charges) or (type(charges) == "table" and issecrettable and issecrettable(charges)) then return nil end
+    if type(charges) == "table" then
+        local current, maximum = charges.currentCharges, charges.maxCharges
+        local start, duration, rate = charges.cooldownStartTime, charges.cooldownDuration, charges.chargeModRate
+        if not PlainNumber(current) or not PlainNumber(maximum) then return nil end
+        if maximum > 0 then
+            if current >= maximum then return false end
+            if not PlainNumber(start) or not PlainNumber(duration) or IsSecret(rate) then return nil end
+            if start <= 0 or duration <= 0 then return false end
+            if not PlainNumber(rate) or rate <= 0 then rate = 1 end
+            local total = duration / rate
+            if start + total <= GetTime() then return false end
+            -- Show the next charge's recharge even while another charge is usable.
+            return {duration = total, expires = start + total}
+        end
+    end
     local info
     if C_Spell and C_Spell.GetSpellCooldown then
         info = C_Spell.GetSpellCooldown(id)
@@ -571,8 +606,6 @@ local function ScanCooldowns()
 end
 local function TrackCooldownCast(unit, id)
     if IsSecret(unit) or unit ~= "player" or not PlainNumber(id) then return end
-    local _, class = UnitClass("player")
-    if not SupportsClass(class) then return end
     local name = cooldownSpells[id]
     if not name and spells[id] then
         name = AddSpell(id)
@@ -861,7 +894,7 @@ local function Initialize()
     Render()
 end
 local events = CreateFrame("Frame")
-for _, event in ipairs({"ADDON_LOADED", "PLAYER_ENTERING_WORLD", "PLAYER_TARGET_CHANGED", "UNIT_SPELLCAST_SUCCEEDED", "SPELL_UPDATE_COOLDOWN", "UNIT_AURA", "PLAYER_REGEN_ENABLED", "SPELLS_CHANGED", "UI_SCALE_CHANGED", "DISPLAY_SIZE_CHANGED"}) do events:RegisterEvent(event) end
+for _, event in ipairs({"ADDON_LOADED", "PLAYER_ENTERING_WORLD", "PLAYER_TARGET_CHANGED", "UNIT_SPELLCAST_SUCCEEDED", "SPELL_UPDATE_COOLDOWN", "SPELL_UPDATE_CHARGES", "UNIT_AURA", "PLAYER_REGEN_ENABLED", "SPELLS_CHANGED", "UI_SCALE_CHANGED", "DISPLAY_SIZE_CHANGED"}) do events:RegisterEvent(event) end
 events:SetScript("OnEvent", function(_, event, unit, castGUID, spellID)
     if event == "ADDON_LOADED" then
         if unit == ADDON_NAME and not initialized then Initialize() end
@@ -875,7 +908,7 @@ events:SetScript("OnEvent", function(_, event, unit, castGUID, spellID)
         Render()
         return
     end
-    if event == "SPELL_UPDATE_COOLDOWN" then ScanCooldowns(); Render(); return end
+    if event == "SPELL_UPDATE_COOLDOWN" or event == "SPELL_UPDATE_CHARGES" then ScanCooldowns(); Render(); return end
     if event == "PLAYER_TARGET_CHANGED" then
         ScanTarget(true)
         if nativeTarget then

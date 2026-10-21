@@ -1,8 +1,8 @@
 # LH_AuraBars
 
-Version: 1.6.1
+Version: 1.8.0
 
-Buff and spell cooldown bars for Paladins, Rogues, Warriors, Warlocks, Priests, Hunters and Shamans in WoW Forever Beta (Interface 16001). Buffs appear when at most three minutes remain, regardless of their total duration. This includes talent procs, received buffs and estimated Paladin seals. Permanent auras are hidden. Cooldowns appear regardless of remaining time. The player display requires a living, attackable target. Buff durations come from the client's active auras. Localized spell names cover known Paladin abilities and their ranks; class spellbook sections provide additional abilities. Active ability cooldowns are discovered from class and General spellbook sections for all seven supported classes, including racial abilities, regardless of rank or client language. General spellbook racial cooldowns and timed racial buffs are supported for every class and race, including all Horde races; discovery uses learned spells rather than a fixed racial list.
+Buff and spell cooldown bars for every class, race and faction in WoW Forever Beta (Interface 16001), including Mages and Druids. Buffs appear when at most three minutes remain, regardless of their total duration. This includes talent procs, received buffs and estimated Paladin seals. Permanent auras are hidden. Cooldowns appear regardless of remaining time. The player display requires a living, attackable target. Buff durations come from the client's active auras. All spellbook sections and known flyout entries are scanned for learned abilities, ranks, talents, racial abilities and beta additions, using localized spell names. There is no class, race or faction allowlist. Modern spellbook discovery excludes passive, future and off-spec cooldown entries and uses overriding spell IDs. Timed buffs and procs are read independently of the spellbook, including buffs received from other classes. Charge-based abilities show the next charge's recharge timer, even when another charge remains usable.
 
 The player group appears to the right of the screen center. A second group on the left shows timed buffs and debuffs on the current target, including friendly targets and auras from any caster. When the native AuraContainer API is available, the client manages debuffs, names, icons, remaining time and bar fill; buffs use readable aura queries to enforce the remaining-time threshold. Permanent auras remain hidden. Target buffs are gold and target debuffs are red. The client updates the display when targets change. Older aura queries remain available as a fallback where the native API is unavailable; protected target auras may block these queries.
 
@@ -25,6 +25,14 @@ Validation: Lua 5.1 tests with simulated WoW APIs cover sorting, remaining time,
 
 All supported classes use the same remaining-time filter for player buffs. Native player and target debuffs remain supported, including protected auras. Cooldowns retain their existing display.
 
+## Graphical settings and LH Tweaks
+
+LH_AuraBars requires **LH_Tweaks** as its configuration host. Open the game's Settings, then AddOns > LH Tweaks > LH AuraBars. The native subcategory provides an unlock/preview checkbox, a size synchronization checkbox, a layout reset button and a button to print aura diagnostics in chat. All existing chat commands remain available and update the same settings.
+
+Unlock both groups to move their preview bars or resize them with the small circles. Reset layout restores both groups' default positions and dimensions while preserving locking and synchronization. Blizzard's Defaults for this category additionally locks the groups and disables synchronization; learned cooldown and seal duration caches remain intact. Settings are saved per character. Aura discovery, duration filters, colors and class support continue to work automatically.
+
+In the AddOn list, LH AuraBars is grouped under LH Tweaks. Its bundled Media/Icon.png and Media/Icon.tga are identical copies of the shared LH_Tweaks artwork (gold LH lettering, with Spoken's chamfered gold frame as the reference). There is no runtime dependency on Spoken. Fully restart WoW after this update so the new TOC file entry and grouping metadata are loaded. CurseForge releases must also declare the LH_Tweaks project as a required dependency; TOC metadata does not download it.
+
 ## Upgrading from MiniAuraBars
 
 Replace the old addon folder with **LH_AuraBars** and restart WoW. Commands now use `/lh_aurabars`.
@@ -32,6 +40,24 @@ Replace the old addon folder with **LH_AuraBars** and restart WoW. Commands now 
 To retain your positions, sizes and other settings, close WoW and back up each character's `WTF/Account/<account>/<realm>/<character>/SavedVariables/MiniAuraBars.lua` file. Copy it to `LH_AuraBars.lua` in the same SavedVariables folder and change the table name `MiniAuraBarsDB` to `LH_AuraBarsDB` inside the copy. Migrate before first using the renamed addon; do not overwrite an existing `LH_AuraBars.lua` containing settings you want to keep. Without migration, the addon uses its default settings.
 
 ## Changelog
+
+### 1.8.0 - 2026-10-21
+
+- Removed the seven-class restriction from full spellbook discovery and cast-based cooldown fallback. Mages, Druids and any additional client classes use the same discovery as the other classes, regardless of race or faction.
+- Added known spellbook flyout abilities, including override IDs, and excluded modern future/off-spec entries.
+- Added modern and legacy spell-charge recharge timers and immediate charge-update handling.
+- Added a simulated matrix of 14 class identifiers and 12 race/faction fixtures (168 combinations), including unknown beta identifiers, for both spellbook APIs, class sections, racial abilities, flyouts, cast fallback, received buffs, procs, learned/unlearned spells and expiry. These fixtures verify generic discovery; they do not prove the availability of those character combinations in Forever.
+- All 20 Lua 5.1 simulation suites passed, including the existing native aura, class, racial, settings and layout regressions plus the new discovery matrix and charge tests. git diff --check passed. Live beta verification remains pending.
+- Retained existing display rules and API limitations: permanent auras remain hidden, buffs enter at 180 seconds remaining, and protected unreadable buffs cannot be newly timed. Totem lifetimes, pet-unit timers and weapon enchant durations without player/target aura data remain outside these two groups. Passive racial effects without a timed aura do not generate bars. Complete live coverage of every ability is not established by simulation.
+- API references: [Forever spellbook structures](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_APIDocumentationGenerated/SpellBookDocumentation.lua), [native flyout handling](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_ActionBar/Shared/SpellFlyout.lua), and [spell charge structures](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_APIDocumentationGenerated/SpellSharedDocumentation.lua).
+
+### 1.7.0 - 2026-10-21
+
+- Added a native LH AuraBars settings subcategory under LH Tweaks for all existing commands: unlocking/previews, size synchronization, layout reset and aura diagnostics.
+- Kept slash commands and graphical controls synchronized through the existing command implementation. Native Defaults restores the layout, locks both groups and disables size synchronization.
+- Added native AddOn list grouping under LH Tweaks and bundled exact copies of its shared icon.
+- All 18 Lua 5.1 simulation suites passed, including native module registration, controls, command synchronization, scoped defaults, layout reset, cache preservation and saved-state reload. Shared icon files were verified byte-for-byte; git diff --check passed.
+- Native rendering and AddOn list presentation require in-game verification.
 
 ### 1.6.1 - 2026-10-21
 
