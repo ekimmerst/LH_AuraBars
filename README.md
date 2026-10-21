@@ -168,3 +168,7 @@ The first commit includes the features developed through version 1.1.1:
 - Turned buff bars orange when 30% or less of their duration remains and made bars blink during the final three seconds.
 - Added light-blue Paladin cooldown bars, including Judgement, with automatic removal after expiration and updates when cooldowns reset.
 - Initially limited Paladin buffs to a total duration of 60 seconds. Version 1.3.1 replaces this with the remaining-time rule above.
+
+## Required core addon
+
+Install and enable **LH_Tweaks** alongside this addon. LH_Tweaks is the shared LiteHawk configuration host and must load first. CurseForge releases must list LH_Tweaks as a required dependency so the client installs it automatically.
