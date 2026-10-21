@@ -118,6 +118,16 @@ local function RefreshSpells()
         end
     end
 end
+-- Player group: right edge on the player frame; target group: left edge on the target frame; 10 pixels above.
+local function SetDefaultPosition(group, index)
+    local frame
+    if index == 1 then frame = PlayerFrame else frame = TargetFrame end
+    group.anchor:ClearAllPoints()
+    if frame then
+        if index == 1 then group.anchor:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, 10)
+        else group.anchor:SetPoint("BOTTOMLEFT", frame, "TOPLEFT", 0, 10) end
+    else group.anchor:SetPoint("CENTER", UIParent, "CENTER", index == 1 and 180 or -180, 0) end
+end
 local function SavePosition(group)
     local x, y = group.anchor:GetCenter()
     if not x or not y then return end
@@ -867,7 +877,7 @@ local function Initialize()
         local p = db.position
         if type(p) == "table" and type(p.x) == "number" and type(p.y) == "number" then
             group.anchor:SetPoint("CENTER", UIParent, "BOTTOMLEFT", p.x, p.y)
-        else group.anchor:SetPoint("CENTER", UIParent, "CENTER", index == 1 and 180 or -180, 0) end
+        else SetDefaultPosition(group, index) end
         CreateResizeHandle(group)
     end
     initialized = true
@@ -1018,8 +1028,7 @@ SlashCmdList.LH_AURABARS = function(message)
             group.db.position = nil
             group.db.widthFactor, group.db.heightFactor = 1, 1
             group.db.sizeFactor = nil
-            group.anchor:ClearAllPoints()
-            group.anchor:SetPoint("CENTER", UIParent, "CENTER", index == 1 and 180 or -180, 0)
+            SetDefaultPosition(group, index)
             UpdateWidth(group)
         end
         Scan()
