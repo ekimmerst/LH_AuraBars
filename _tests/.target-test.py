@@ -17,29 +17,29 @@ C_UnitAuras={GetUnitAuras=function(unit,filter)
     if unit=='player' then return {} end
     return filter=='HELPFUL' and helpful or harmful
 end}
-events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars')
-assert(#rows(MiniAuraBarsTargetFrame)==2)
-assert(rows(MiniAuraBarsTargetFrame)[1].lastName=='Target buff')
-assert(rows(MiniAuraBarsTargetFrame)[1].lastIcon==12345)
-assert(rows(MiniAuraBarsTargetFrame)[1].icon.height==20)
-assert(rows(MiniAuraBarsTargetFrame)[1].icon.point[4]==-3)
-assert(rows(MiniAuraBarsTargetFrame)[1].point[5]-rows(MiniAuraBarsTargetFrame)[2].point[5]==20)
-assert(rows(MiniAuraBarsTargetFrame)[2].fill.color[1]==0.9)
+events.scripts.OnEvent(events,'ADDON_LOADED','LH_AuraBars')
+assert(#rows(LH_AuraBarsTargetFrame)==2)
+assert(rows(LH_AuraBarsTargetFrame)[1].lastName=='Target buff')
+assert(rows(LH_AuraBarsTargetFrame)[1].lastIcon==12345)
+assert(rows(LH_AuraBarsTargetFrame)[1].icon.height==20)
+assert(rows(LH_AuraBarsTargetFrame)[1].icon.point[4]==-3)
+assert(rows(LH_AuraBarsTargetFrame)[1].point[5]-rows(LH_AuraBarsTargetFrame)[2].point[5]==20)
+assert(rows(LH_AuraBarsTargetFrame)[2].fill.color[1]==0.9)
 harmful={}; events.scripts.OnEvent(events,'UNIT_AURA','target')
-assert(#rows(MiniAuraBarsTargetFrame)==1)
+assert(#rows(LH_AuraBarsTargetFrame)==1)
 targetExists=false; events.scripts.OnEvent(events,'PLAYER_TARGET_CHANGED')
-assert(#rows(MiniAuraBarsTargetFrame)==0)
+assert(#rows(LH_AuraBarsTargetFrame)==0)
 targetExists=true; helpful={}; events.scripts.OnEvent(events,'PLAYER_TARGET_CHANGED')
-assert(#rows(MiniAuraBarsTargetFrame)==0,'Previous target leaked')
-SlashCmdList.MINIAURABARS('unlock')
-assert(#rows(MiniAuraBarsFrame)==3 and #rows(MiniAuraBarsTargetFrame)==3)
-local playerWidth=MiniAuraBarsDB.widthFactor
+assert(#rows(LH_AuraBarsTargetFrame)==0,'Previous target leaked')
+SlashCmdList.LH_AURABARS('unlock')
+assert(#rows(LH_AuraBarsFrame)==3 and #rows(LH_AuraBarsTargetFrame)==3)
+local playerWidth=LH_AuraBarsDB.widthFactor
 mouseDown=true; cursorX=0; cursorY=0
-MiniAuraBarsTargetResizeHandle.scripts.OnMouseDown(nil,'LeftButton')
+LH_AuraBarsTargetResizeHandle.scripts.OnMouseDown(nil,'LeftButton')
 cursorX=160; cursorY=-60; events.scripts.OnUpdate(events,0.5)
-assert(MiniAuraBarsDB.target.widthFactor==2 and MiniAuraBarsDB.target.heightFactor==2)
-assert(MiniAuraBarsDB.widthFactor==playerWidth and MiniAuraBarsDB.heightFactor==1)
-for _,parent in ipairs({MiniAuraBarsFrame,MiniAuraBarsTargetFrame}) do
+assert(LH_AuraBarsDB.target.widthFactor==2 and LH_AuraBarsDB.target.heightFactor==2)
+assert(LH_AuraBarsDB.widthFactor==playerWidth and LH_AuraBarsDB.heightFactor==1)
+for _,parent in ipairs({LH_AuraBarsFrame,LH_AuraBarsTargetFrame}) do
     for _,row in ipairs(rows(parent)) do
         assert(row.name.fontSize==12 and row.time.fontSize==12 and row.measure.fontSize==12)
         assert(row.time.width==42)
@@ -47,15 +47,15 @@ for _,parent in ipairs({MiniAuraBarsFrame,MiniAuraBarsTargetFrame}) do
     end
 end
 mouseDown=false; events.scripts.OnUpdate(events,0.1)
-local targetRow=rows(MiniAuraBarsTargetFrame)[1]
+local targetRow=rows(LH_AuraBarsTargetFrame)[1]
 targetRow.scripts.OnDragStop()
-assert(MiniAuraBarsDB.target.position.x==700)
-SlashCmdList.MINIAURABARS('lock')
-assert(#rows(MiniAuraBarsFrame)==0 and #rows(MiniAuraBarsTargetFrame)==0)
+assert(LH_AuraBarsDB.target.position.x==700)
+SlashCmdList.LH_AURABARS('lock')
+assert(#rows(LH_AuraBarsFrame)==0 and #rows(LH_AuraBarsTargetFrame)==0)
 assert(not targetRow.mouse)
-SlashCmdList.MINIAURABARS('reset')
-assert(MiniAuraBarsDB.target.widthFactor==1 and MiniAuraBarsDB.target.heightFactor==1)
-assert(MiniAuraBarsDB.target.position==nil and MiniAuraBarsDB.position==nil)
+SlashCmdList.LH_AURABARS('reset')
+assert(LH_AuraBarsDB.target.widthFactor==1 and LH_AuraBarsDB.target.heightFactor==1)
+assert(LH_AuraBarsDB.target.position==nil and LH_AuraBarsDB.position==nil)
 -- Legacy target buffs and debuffs use distinct queries and filters.
 C_UnitAuras=nil
 UnitBuff=function(unit,index)
@@ -65,8 +65,8 @@ UnitDebuff=function(unit,index)
     if unit=='target' and index==1 then return 'Legacy debuff',nil,nil,nil,15,115,'other',nil,nil,2 end
 end
 events.scripts.OnEvent(events,'UNIT_AURA','target')
-assert(#rows(MiniAuraBarsTargetFrame)==2)
+assert(#rows(LH_AuraBarsTargetFrame)==2)
 clock=131; events.scripts.OnUpdate(events,0.5)
-assert(#rows(MiniAuraBarsTargetFrame)==0)
+assert(#rows(LH_AuraBarsTargetFrame)==0)
 print('PASS: target buffs/debuffs, modern/legacy APIs, removal, target switch, independent resize/position, fixed fonts, previews, lock, reset, expiration')
 ''')

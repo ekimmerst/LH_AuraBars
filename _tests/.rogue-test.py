@@ -23,7 +23,7 @@ C_Spell={GetSpellName=function(id) return 'Spell'..id end,
 local data={}
 local harmful={}
 C_UnitAuras={GetUnitAuras=function(unit,filter) if unit=="target" then return {} end if filter=="HARMFUL" then return harmful end return data end}
-events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars')
+events.scripts.OnEvent(events,'ADDON_LOADED','LH_AuraBars')
 data={{name='Slice',spellId=5171,duration=30,expirationTime=130},
  {name='Proc',spellId=999999,duration=120,expirationTime=220},
  {name='Stealth',spellId=1784,duration=0,expirationTime=0}}

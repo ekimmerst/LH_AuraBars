@@ -1,6 +1,8 @@
-# MiniAuraBars
+# LH_AuraBars
 
-Buff and spell cooldown bars for Paladins, Rogues, Warriors, Warlocks, Priests and Hunters in WoW Forever Beta (Interface 16001). Buffs appear when at most three minutes remain, regardless of their total duration. This includes talent procs, received buffs and estimated Paladin seals. Permanent auras are hidden. Cooldowns appear regardless of remaining time. The player display requires a living, attackable target. Buff durations come from the client's active auras. Localized spell names cover known Paladin abilities and their ranks; class spellbook sections provide additional abilities. Active ability cooldowns are discovered from class and General spellbook sections for all six supported classes, including racial abilities, regardless of rank or client language. Timed racial buffs are also shown.
+Version: 1.6.1
+
+Buff and spell cooldown bars for Paladins, Rogues, Warriors, Warlocks, Priests, Hunters and Shamans in WoW Forever Beta (Interface 16001). Buffs appear when at most three minutes remain, regardless of their total duration. This includes talent procs, received buffs and estimated Paladin seals. Permanent auras are hidden. Cooldowns appear regardless of remaining time. The player display requires a living, attackable target. Buff durations come from the client's active auras. Localized spell names cover known Paladin abilities and their ranks; class spellbook sections provide additional abilities. Active ability cooldowns are discovered from class and General spellbook sections for all seven supported classes, including racial abilities, regardless of rank or client language. General spellbook racial cooldowns and timed racial buffs are supported for every class and race, including all Horde races; discovery uses learned spells rather than a fixed racial list.
 
 The player group appears to the right of the screen center. A second group on the left shows timed buffs and debuffs on the current target, including friendly targets and auras from any caster. When the native AuraContainer API is available, the client manages debuffs, names, icons, remaining time and bar fill; buffs use readable aura queries to enforce the remaining-time threshold. Permanent auras remain hidden. Target buffs are gold and target debuffs are red. The client updates the display when targets change. Older aura queries remain available as a fallback where the native API is unavailable; protected target auras may block these queries.
 
@@ -8,22 +10,41 @@ Groups follow the affected unit: group 1 shows buffs and debuffs on `player` and
 
 Player and target buffs use readable aura timers and appear only at 180 seconds remaining or less, regardless of total duration. Buffs with protected, unreadable timers cannot be newly displayed. Native containers remain responsible for debuffs; native debuffs retain their full-duration display.
 
-Width, Smooth texture and borders match MiniExpBar. Names and timers use an outlined 12-point font regardless of bar size. The texture is bundled with MiniAuraBars, so MiniExpBar does not need to be enabled. Both groups grow upward, keeping the bottom bar fixed as bars appear and disappear. Player bars sort by descending remaining duration and blink during the final three seconds. Expired or removed auras disappear.
+Width, Smooth texture and borders match MiniExpBar. Names and timers use an outlined 12-point font regardless of bar size. The texture is bundled with LH_AuraBars, so MiniExpBar does not need to be enabled. Both groups grow upward, keeping the bottom bar fixed as bars appear and disappear. Player bars sort by descending remaining duration and blink during the final three seconds. Expired or removed auras disappear.
 
-- `/miniaurabars unlock`: show three persistent preview bars per group, even without a target. Player and Target headers appear 8 UI units above their groups while unlocked and disappear when locked. Left-drag each group to move it independently. Left-drag the small circle below the right side of each group to resize width horizontally and height vertically, independently between 50% and 200% of the default size. Bars touch vertically and retain the 12-point font. Each bar has a square icon on its left, matching its height with a gap of 3 UI units.
-- `/miniaurabars lock`: lock both groups and hide preview bars.
-- `/miniaurabars synch on`: synchronize group width and height. The target group initially adopts the player group's size; subsequent resizing of either group updates both. Positions remain independent.
-- `/miniaurabars synch off`: resize groups independently (default). Saved per character.
-- `/miniaurabars reset`: restore default width (matching MiniExpBar), height (20 UI units) and positions for both groups. The lock state is preserved.
-- `/miniaurabars debug`: print target aura API diagnostics in chat.
+- `/lh_aurabars unlock`: show three persistent preview bars per group, even without a target. Player and Target headers appear 8 UI units above their groups while unlocked and disappear when locked. Left-drag each group to move it independently. Left-drag the small circle below the right side of each group to resize width horizontally and height vertically, independently between 50% and 200% of the default size. Bars touch vertically and retain the 12-point font. Each bar has a square icon on its left, matching its height with a gap of 3 UI units.
+- `/lh_aurabars lock`: lock both groups and hide preview bars.
+- `/lh_aurabars synch on`: synchronize group width and height. The target group initially adopts the player group's size; subsequent resizing of either group updates both. Positions remain independent.
+- `/lh_aurabars synch off`: resize groups independently (default). Saved per character.
+- `/lh_aurabars reset`: restore default width (matching MiniExpBar), height (20 UI units) and positions for both groups. The lock state is preserved.
+- `/lh_aurabars debug`: print target aura API diagnostics in chat.
 
-Position and size are saved separately for each group and character; both groups share the lock state. After installation, fully restart the client and enable MiniAuraBars in the AddOn list. Settings use the per-character `MiniAuraBarsDB` saved variable.
+Position and size are saved separately for each group and character; both groups share the lock state. After installation, fully restart the client and enable LH_AuraBars in the AddOn list. Settings use the per-character `LH_AuraBarsDB` saved variable.
 
 Validation: Lua 5.1 tests with simulated WoW APIs cover sorting, remaining time, bar fill, blinking, removal, preview bars, locking, width and position. The three-minute buff threshold was confirmed working in the live beta client on 2026-10-17.
 
 All supported classes use the same remaining-time filter for player buffs. Native player and target debuffs remain supported, including protected auras. Cooldowns retain their existing display.
 
+## Upgrading from MiniAuraBars
+
+Replace the old addon folder with **LH_AuraBars** and restart WoW. Commands now use `/lh_aurabars`.
+
+To retain your positions, sizes and other settings, close WoW and back up each character's `WTF/Account/<account>/<realm>/<character>/SavedVariables/MiniAuraBars.lua` file. Copy it to `LH_AuraBars.lua` in the same SavedVariables folder and change the table name `MiniAuraBarsDB` to `LH_AuraBarsDB` inside the copy. Migrate before first using the renamed addon; do not overwrite an existing `LH_AuraBars.lua` containing settings you want to keep. Without migration, the addon uses its default settings.
+
 ## Changelog
+
+### 1.6.1 - 2026-10-21
+
+- Renamed MiniAuraBars to LH_AuraBars, including the folder, Lua/TOC files, metadata, texture path, named frames, chat messages and documentation.
+- Changed commands to `/lh_aurabars` and per-character saved settings to `LH_AuraBarsDB`.
+- Updated existing test references and documented how to transfer settings from the previous addon name.
+
+### 1.6.0 - 2026-10-19
+
+- Added Shaman class spellbook discovery for all learned ranks, talents and beta abilities. Timed buffs, procs and player/target debuffs use the shared aura handling.
+- Discover General spellbook racial cooldowns for every class, including classes without full class cooldown support. Bloodfury cast fallback also works for every class.
+- Added Shaman legacy/modern spellbook, aura, target and native protected-debuff coverage; expanded racial cooldown coverage across classes and racial spell IDs. Live beta validation is pending.
+- Existing display rules remain: buffs at at most 180 seconds remaining, permanent auras hidden, player bars require a living attackable target. Totem lifetimes and weapon enchant timers without a player/target aura are outside the aura/cooldown groups.
 
 ### 1.5.9 - 2026-10-17
 
@@ -88,7 +109,7 @@ All supported classes use the same remaining-time filter for player buffs. Nativ
 
 ### 1.4.4 — 2026-10-15
 
-- Added `/miniaurabars debug` to report target debuff API availability, errors, counts, readable fields and hidden fields in chat. Run while the target has a debuff to diagnose the live beta client; no hidden values are converted or compared.
+- Added `/lh_aurabars debug` to report target debuff API availability, errors, counts, readable fields and hidden fields in chat. Run while the target has a debuff to diagnose the live beta client; no hidden values are converted or compared.
 
 ### 1.4.3 — 2026-10-15
 
@@ -98,7 +119,7 @@ All supported classes use the same remaining-time filter for player buffs. Nativ
 
 ### 1.4.2 — 2026-10-15
 
-- Added `/miniaurabars synch on|off` to synchronize group width and height while keeping positions independent; defaults to off and persists per character.
+- Added `/lh_aurabars synch on|off` to synchronize group width and height while keeping positions independent; defaults to off and persists per character.
 - Fall back to indexed and legacy aura queries when the batch API is unavailable. Target auras no longer require readable spell IDs when their names and timers are readable.
 - Retain known target timers through incomplete/restricted scans without carrying them across target changes. Fully hidden newly applied auras still require readable client data.
 - Added target aura regression coverage for Paladin, Rogue, Warrior, and Warlock, plus synchronization and reload tests.

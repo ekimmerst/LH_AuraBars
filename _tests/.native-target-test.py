@@ -1,5 +1,5 @@
 from pathlib import Path
-for class_name in ('PALADIN', 'PRIEST', 'HUNTER', 'ROGUE'):
+for class_name in ('PALADIN', 'PRIEST', 'HUNTER', 'ROGUE', 'SHAMAN'):
     exec((Path(__file__).resolve().parent / '.lua-test-support.py').read_text())
     lua.globals().TEST_CLASS = class_name
     lua.execute('''
@@ -15,7 +15,7 @@ for class_name in ('PALADIN', 'PRIEST', 'HUNTER', 'ROGUE'):
     Enum={StatusBarTimerDirection={RemainingTime=1}}
     C_UnitAuras={GetUnitAuras=function(unit,filter)
      if filter=='HELPFUL' then return helpfulData end
-     if unit=='target' or (TEST_CLASS=='PRIEST' or TEST_CLASS=='HUNTER' or TEST_CLASS=='ROGUE') then rawReads=rawReads+1; error('Auras cannot be accessed when secret while tainted') end
+     if unit=='target' or (TEST_CLASS=='PRIEST' or TEST_CLASS=='HUNTER' or TEST_CLASS=='ROGUE' or TEST_CLASS=='SHAMAN') then rawReads=rawReads+1; error('Auras cannot be accessed when secret while tainted') end
      return {}
     end}
     function CreateFrame(kind,name,parent,template)
@@ -62,12 +62,12 @@ for class_name in ('PALADIN', 'PRIEST', 'HUNTER', 'ROGUE'):
     end
     local events
     for _,f in ipairs(frames) do if f.scripts.OnEvent then events=f end end
-    events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars')
+    events.scripts.OnEvent(events,'ADDON_LOADED','LH_AuraBars')
     assert(container.unit=='target' and container.refreshed and container.visible)
     assert(#registrations==2 and rawReads==0,'Native backend must not query restricted aura APIs')
-    assert(playerContainer.unit=='player' and playerContainer.parent==MiniAuraBarsFrame)
+    assert(playerContainer.unit=='player' and playerContainer.parent==LH_AuraBarsFrame)
     assert(playerContainer.displayedUnit=='player','Showing player container displayed target auras')
-    assert(container.parent==MiniAuraBarsTargetFrame)
+    assert(container.parent==LH_AuraBarsTargetFrame)
     helpfulData={{name='Long buff',spellId=999998,duration=1800,expirationTime=281}}
     events.scripts.OnEvent(events,'UNIT_AURA','player')
     events.scripts.OnEvent(events,'UNIT_AURA','target')
@@ -106,18 +106,18 @@ for class_name in ('PALADIN', 'PRIEST', 'HUNTER', 'ROGUE'):
     assert(not container.visible,'Target container remained visible after clearing target')
     events.scripts.OnUpdate(events,0.5)
     assert(not container.visible,'Polling reopened target container without target')
-    SlashCmdList.MINIAURABARS('unlock')
+    SlashCmdList.LH_AURABARS('unlock')
     assert(not container.visible,'Native auras overlap previews without target')
-    assert(MiniAuraBarsTargetResizeHandle.visible,'Target previews unavailable without target')
-    SlashCmdList.MINIAURABARS('lock')
+    assert(LH_AuraBarsTargetResizeHandle.visible,'Target previews unavailable without target')
+    SlashCmdList.LH_AURABARS('lock')
     assert(not container.visible,'Locking reopened target container without target')
     targetExists=true; targetAttackable=false; container.refreshed=false
     events.scripts.OnEvent(events,'PLAYER_TARGET_CHANGED')
     assert(container.visible and container.refreshed,'Friendly target did not restore and refresh container')
     targetAttackable=true
-    SlashCmdList.MINIAURABARS('unlock'); assert(not container.visible)
+    SlashCmdList.LH_AURABARS('unlock'); assert(not container.visible)
     mouseDown=true; cursorX=0; cursorY=0
-    MiniAuraBarsTargetResizeHandle.scripts.OnMouseDown(nil,'LeftButton')
+    LH_AuraBarsTargetResizeHandle.scripts.OnMouseDown(nil,'LeftButton')
     cursorX=160; cursorY=-60; events.scripts.OnUpdate(events,0.5)
     assert(container.groups.HARMFUL.layout.elementWidth==320)
     assert(container.groups.HARMFUL.layout.elementHeight==40)
@@ -126,10 +126,10 @@ for class_name in ('PALADIN', 'PRIEST', 'HUNTER', 'ROGUE'):
      else assert(r.icon.width==20 and r.name.width==74) end
     end
     mouseDown=false
-    SlashCmdList.MINIAURABARS('lock'); assert(container.visible)
+    SlashCmdList.LH_AURABARS('lock'); assert(container.visible)
     assert(playerContainer.unit=='player' and playerContainer.displayedUnit=='player',
      'Locking previews rebound player debuffs to target')
-    SlashCmdList.MINIAURABARS('reset')
+    SlashCmdList.LH_AURABARS('reset')
     assert(container.groups.HARMFUL.layout.elementWidth==160)
     assert(container.groups.HARMFUL.layout.elementHeight==20)
     assert(rawReads==0)
@@ -142,12 +142,12 @@ lua.execute('''
 C_AddOns={LoadAddOn=function() error('Test module unavailable') end}
 local events
 for _,f in ipairs(frames) do if f.scripts.OnEvent then events=f end end
-events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars')
+events.scripts.OnEvent(events,'ADDON_LOADED','LH_AuraBars')
 local output={}
 print=function(message) output[#output+1]=message end
-SlashCmdList.MINIAURABARS('debug')
+SlashCmdList.LH_AURABARS('debug')
 assert(table.concat(output,' ').find(table.concat(output,' '),'Test module unavailable',1,true))
-SlashCmdList.MINIAURABARS('unlock')
-assert(MiniAuraBarsDB.locked==false)
+SlashCmdList.LH_AURABARS('unlock')
+assert(LH_AuraBarsDB.locked==false)
 ''')
 print('PASS: native initialization failure remains diagnosable and previews work')

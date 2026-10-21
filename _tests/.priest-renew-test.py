@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 exec((Path(__file__).resolve().parent / '.lua-test-support.py').read_text())
 lua.execute('''
 UnitClass=function() return 'Priester','PRIEST' end
@@ -6,7 +6,7 @@ local events
 for _,f in ipairs(frames) do if f.scripts.OnEvent then events=f end end
 local function renewRow()
  for _,f in ipairs(frames) do
-  if f.parent==MiniAuraBarsFrame and rawget(f,'fill') and rawget(f,'visible') and f.name.text=='Erneuerung' then return f end
+  if f.parent==LH_AuraBarsFrame and rawget(f,'fill') and rawget(f,'visible') and f.name.text=='Erneuerung' then return f end
  end
 end
 local data={}
@@ -14,7 +14,7 @@ C_UnitAuras={GetUnitAuras=function(unit,filter)
  if unit=='player' and filter=='HELPFUL' then return data end
  return {}
 end}
-events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars')
+events.scripts.OnEvent(events,'ADDON_LOADED','LH_AuraBars')
 assert(not renewRow())
 data={{name='Erneuerung',spellId=139,sourceUnit='player',duration=15,expirationTime=115}}
 events.scripts.OnEvent(events,'UNIT_SPELLCAST_SUCCEEDED','player','renew',139)

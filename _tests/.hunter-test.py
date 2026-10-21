@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 
 exec((Path(__file__).resolve().parent / '.lua-test-support.py').read_text())
 lua.execute('''
@@ -8,7 +8,7 @@ for _,f in ipairs(frames) do if f.scripts.OnEvent then events=f end end
 local function count()
  local n=0
  for _,f in ipairs(frames) do
-  if f.parent==MiniAuraBarsFrame and rawget(f,'fill') and rawget(f,'visible') then n=n+1 end
+  if f.parent==LH_AuraBarsFrame and rawget(f,'fill') and rawget(f,'visible') then n=n+1 end
  end
  return n
 end
@@ -30,7 +30,7 @@ C_UnitAuras={GetUnitAuras=function(unit,filter)
  if unit~='player' then return {} end
  return filter=='HARMFUL' and harmful or helpful
 end}
-events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars')
+events.scripts.OnEvent(events,'ADDON_LOADED','LH_AuraBars')
 assert(count()==4,'Hunter buffs, proc and player debuff missing')
 for _,id in ipairs(ids) do raw[id]={startTime=100,duration=180,isEnabled=true} end
 events.scripts.OnEvent(events,'SPELL_UPDATE_COOLDOWN')

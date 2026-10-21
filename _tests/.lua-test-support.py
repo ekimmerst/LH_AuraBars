@@ -7,4 +7,4 @@ lua.execute("cursorX,cursorY,mouseDown=0,0,false\nfunction GetCursorPosition() r
 lua.execute("local m=getmetatable(CreateFrame('Frame')).__index\nfunction m:SetFont(_,size) self.fontSize=size end\nfunction m:GetStringWidth()\n local width=0\n for c in (self.text or ''):gmatch('[%z\\1-\\127\\194-\\244][\\128-\\191]*') do\n  width=width+(c=='W' and 9 or 4)*(self.fontSize or 12)/12\n end\n return width\nend\n")
 lua.execute("targetExists,targetAttackable,targetDead=true,true,false\nfunction UnitExists() return targetExists end\nfunction UnitCanAttack() return targetAttackable end\nfunction UnitIsDeadOrGhost() return targetDead end\n")
 lua.execute("local m=getmetatable(CreateFrame('Frame')).__index\nfunction m:SetStatusBarColor(r,g,b,a) self.color={r,g,b,a} end\n")
-lua.execute((pathlib.Path(__file__).resolve().parent.parent / "MiniAuraBars.lua").read_text(),"MiniAuraBars")
+lua.execute((pathlib.Path(__file__).resolve().parent.parent / "LH_AuraBars.lua").read_text(),"LH_AuraBars")

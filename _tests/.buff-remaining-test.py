@@ -20,7 +20,7 @@ C_Spell={GetSpellName=function(id) return 'Spell'..id end,
   return {startTime=0,duration=0,isEnabled=true}
  end}
 IsSpellKnown=function() return true end
-events.scripts.OnEvent(events,'ADDON_LOADED','MiniAuraBars')
+events.scripts.OnEvent(events,'ADDON_LOADED','LH_AuraBars')
 for _,class in ipairs({'PALADIN','ROGUE','WARRIOR','WARLOCK','PRIEST','HUNTER'}) do
  UnitClass=function() return class,class end
  clock=100

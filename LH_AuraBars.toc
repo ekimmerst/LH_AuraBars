@@ -1,0 +1,8 @@
+## Interface: 16001
+## Title: LH_AuraBars
+## Notes: Paladin, rogue, warrior, warlock, priest, hunter and shaman buff and spell cooldown bars matching MiniExpBar.
+## Author: LH_AuraBars
+## Version: 1.6.1
+## SavedVariablesPerCharacter: LH_AuraBarsDB
+
+LH_AuraBars.lua
