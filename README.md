@@ -1,5 +1,7 @@
 <h1 style="color: #d9a94b;">LH AuraBars</h1>
 
+<p>Track player and target buffs, debuffs, and spell cooldowns in compact, movable bars that fit the default WoW UI.</p>
+
 <p>A tidy place for the buffs, debuffs and spell cooldowns you want to keep an eye on. LH AuraBars uses compact bars styled to sit naturally beside the rest of the LH UI, instead of covering your screen with another large panel.</p>
 
 <h2 style="color: #73c9c4;">What it does</h2>
