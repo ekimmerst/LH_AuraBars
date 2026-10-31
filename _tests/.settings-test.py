@@ -56,34 +56,34 @@ LH_Tweaks.category={title='LH Tweaks'}
 LH_Tweaks:RegisterModulePage('LH_AuraBars')
 local category=registeredCategory
 assert(category.parent==LH_Tweaks.category and category.title=='LH AuraBars')
-local unlock, synch=registry.LH_AuraBars_unlocked, registry.LH_AuraBars_synch
-assert(not unlock.get() and not synch.get())
-assert(unlock.default==false and synch.default==false)
-unlock.set(true)
-assert(unlock.get() and not LH_AuraBarsDB.locked)
+local lock, synch=registry.LH_AuraBars_locked, registry.LH_AuraBars_synch
+assert(lock.get() and not synch.get())
+assert(lock.default==true and synch.default==false)
+lock.set(false)
+assert(not lock.get() and not LH_AuraBarsDB.locked)
 LH_AuraBarsDB.widthFactor=1.5
 synch.set(true)
 assert(synch.get() and LH_AuraBarsDB.target.widthFactor==1.5)
 SlashCmdList.LH_AURABARS('lock')
-assert(not unlock.get() and notices.LH_AuraBars_unlocked>0)
+assert(lock.get() and notices.LH_AuraBars_locked>0)
 SlashCmdList.LH_AURABARS('unlock')
 LH_AuraBarsDB.position={x=600,y=300}
 LH_AuraBarsDB.target.position={x=300,y=300}
 buttons['Reset layout']()
-assert(unlock.get() and synch.get())
+assert(not lock.get() and synch.get())
 assert(not LH_AuraBarsDB.position and not LH_AuraBarsDB.target.position)
 assert(LH_AuraBarsDB.widthFactor==1 and LH_AuraBarsDB.target.widthFactor==1)
 LH_AuraBarsDB.cooldownDurations[123]=42
 LH_AuraBarsDB.sealDurations.example=30
 LH_AuraBarsDB.widthFactor=1.5
 fire('Settings.CategoryDefaulted', {})
-assert(unlock.get() and LH_AuraBarsDB.widthFactor==1.5)
+assert(not lock.get() and LH_AuraBarsDB.widthFactor==1.5)
 fire('Settings.CategoryDefaulted', category)
-assert(not unlock.get() and not synch.get() and LH_AuraBarsDB.widthFactor==1)
+assert(lock.get() and not synch.get() and LH_AuraBarsDB.widthFactor==1)
 assert(LH_AuraBarsDB.cooldownDurations[123]==42 and LH_AuraBarsDB.sealDurations.example==30)
-unlock.set(true);synch.set(true)
+lock.set(false);synch.set(true)
 fire('Settings.Defaulted')
-assert(not unlock.get() and not synch.get())
+assert(lock.get() and not synch.get())
 buttons['Print diagnostics']()
 -- Simulate a new character load with saved state before immediate page registration.
 LH_AuraBarsDB.locked=false;LH_AuraBarsDB.synch=true
@@ -94,7 +94,7 @@ lua.execute((addon / 'LH_AuraBars.lua').read_text(), 'LH_AuraBars')
 lua.execute('''
 local events=frames[#frames]
 events.scripts.OnEvent(events, 'ADDON_LOADED', 'LH_AuraBars')
-assert(registry.LH_AuraBars_unlocked.get() and registry.LH_AuraBars_synch.get())
+assert(not registry.LH_AuraBars_locked.get() and registry.LH_AuraBars_synch.get())
 assert(LH_AuraBarsDB.target.widthFactor==1.25 and LH_AuraBarsDB.target.heightFactor==0.75)
 ''')
 for extension in ('png', 'tga'):
