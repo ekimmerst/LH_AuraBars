@@ -43,5 +43,13 @@
 
 <p><strong>LH Tweaks is required</strong> and must be installed alongside LH AuraBars. I originally made this for my own UI, but I'm glad if it fits yours too. If you find an aura that is missing or behaves oddly, or have an improvement in mind, please tell me in the CurseForge comments.</p>
 
+<h2 style="color: #73c9c4;">Changelog</h2>
+
+<p><strong>1.8.0 - Forever</strong></p>
+
+<ul>
+  <li>No gameplay changes in this Forever branch; the existing movable aura and cooldown bars remain available.</li>
+</ul>
+
 <hr>
-<p><sup>*</sup> Implemented with the help of Codex and GPT-6-SOL and tested by me as thoroughly as I could in the WoW beta client. Some class or race combinations may still need work; please report anything you notice.</p>
+<p><sup>*</sup> Implemented with the help of Codex and GPT-6-SOL. Some class or race combinations may still need work; please report anything you notice.</p>
