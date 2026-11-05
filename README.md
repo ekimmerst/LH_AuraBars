@@ -8,6 +8,7 @@
 
 <ul>
   <li>Shows relevant player and target auras in separate groups, with support for classes, races and factions.</li>
+  <li>Shows timed target buffs regardless of how long they have left; target debuffs keep the three-minute display limit.</li>
   <li>Tracks spell cooldowns alongside buffs and debuffs in the same compact style.</li>
   <li>Lets you move and resize the player and target groups separately, or keep their sizes synchronized.</li>
 </ul>
@@ -48,7 +49,7 @@
 <p><strong>1.8.0 - Forever</strong></p>
 
 <ul>
-  <li>No gameplay changes in this Forever branch; the existing movable aura and cooldown bars remain available.</li>
+  <li>Removed the three-minute remaining-time limit for target buffs.</li>
 </ul>
 
 <hr>

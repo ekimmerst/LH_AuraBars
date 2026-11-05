@@ -812,7 +812,7 @@ local function Render()
     end
     local targetDisplay = {}
     for _, aura in ipairs(targetAuras) do
-        if aura.expires > now and aura.expires - now <= MAX_BUFF_REMAINING then
+        if aura.expires > now and (aura.kind ~= "debuff" or aura.expires - now <= MAX_BUFF_REMAINING) then
             targetDisplay[#targetDisplay + 1] = aura
         end
     end
