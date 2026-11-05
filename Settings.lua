@@ -30,6 +30,7 @@ local function RestoreDefaults()
 end
 
 local function Build(category, layout)
+    LH_LayoutProfiles:AddSetting(category, layout, addonName)
     Header(layout, "Positioning")
     local options = {
         { key = "locked", label = "Lock aura bars", default = true,

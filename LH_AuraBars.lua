@@ -854,6 +854,9 @@ local function Initialize()
     LH_AuraBarsDB.widthFactor = math.max(0.5, math.min(2, LH_AuraBarsDB.widthFactor))
     LH_AuraBarsDB.heightFactor = math.max(0.5, math.min(2, LH_AuraBarsDB.heightFactor))
     LH_AuraBarsDB.sizeFactor = nil
+    LH_LayoutProfiles:Register(ADDON_NAME, LH_AuraBarsDB, LH_AuraBarsDB,
+        {"position", "widthFactor", "heightFactor", "locked", "synch", "target.position",
+            "target.widthFactor", "target.heightFactor"})
     preview = not LH_AuraBarsDB.locked
     LH_AuraBarsDB.target = type(LH_AuraBarsDB.target) == "table" and LH_AuraBarsDB.target or {}
     playerGroup.db, targetGroup.db = LH_AuraBarsDB, LH_AuraBarsDB.target

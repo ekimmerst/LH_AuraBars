@@ -17,6 +17,10 @@
 
 <p>Open <strong>Options → AddOns → LH Tweaks → LH AuraBars</strong>. Unlock the bars to see previews, drag each group into place and use the small handle to resize it. Lock them when you're happy. The settings page also has a layout reset button.</p>
 
+<h2 style="color: #c78be6;">Settings profiles</h2>
+
+<p>Choose a character under <strong>Use settings from</strong> to share both bar positions, sizes, synchronization and lock state. Configure that character and log out first. LH Tweaks can apply its selected source to all LH addons at once. Learned aura and cooldown duration data stays with each character. Choose <strong>This character</strong> to restore your own layout.</p>
+
 <h2 style="color: #73c9c4;">More LH addons</h2>
 
 <p>Choose only the pieces you want. Most companion addons require LH Tweaks; LH NameplateQuestInfo also works without it.</p>
@@ -45,6 +49,12 @@
 <p><strong>LH Tweaks is required</strong> and must be installed alongside LH AuraBars. I originally made this for my own UI, but I'm glad if it fits yours too. If you find an aura that is missing or behaves oddly, or have an improvement in mind, please tell me in the CurseForge comments.</p>
 
 <h2 style="color: #73c9c4;">Changelog</h2>
+
+<p><strong>1.9.0 - Forever and Retail</strong></p>
+
+<ul>
+  <li>Added character settings profiles for both aura bar positions, sizes, synchronization and lock state. Learned duration data remains individual.</li>
+</ul>
 
 <p><strong>1.8.0 - Forever</strong></p>
 
