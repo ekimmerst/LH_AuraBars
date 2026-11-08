@@ -758,6 +758,8 @@ local function RenderGroup(group, display, now)
 end
 local function Render()
     local now, display = GetTime(), {}
+    local targetOK, targetExists = pcall(UnitExists, "target")
+    local hasTarget = targetOK and not IsSecret(targetExists) and targetExists
     local ok, attackable = pcall(HasAttackableTarget)
     if ok and attackable then
         for _, aura in ipairs(playerDebuffs) do
@@ -765,6 +767,8 @@ local function Render()
                 display[#display + 1] = aura
             end
         end
+    end
+    if hasTarget then
         for _, buff in ipairs(active) do
             if buff.expires - now <= MAX_BUFF_REMAINING and buff.expires > now and
                 (not estimatedBloodfury or estimatedBloodfury.name ~= buff.name) and
@@ -773,11 +777,11 @@ local function Render()
             end
         end
     end
-    if ok and attackable and estimatedSeal and estimatedSeal.expires - now <= MAX_BUFF_REMAINING and
+    if hasTarget and estimatedSeal and estimatedSeal.expires - now <= MAX_BUFF_REMAINING and
         estimatedSeal.expires > now then
         display[#display + 1] = estimatedSeal
     end
-    if ok and attackable and estimatedBloodfury and estimatedBloodfury.expires > now and
+    if hasTarget and estimatedBloodfury and estimatedBloodfury.expires > now and
         estimatedBloodfury.expires - now <= MAX_BUFF_REMAINING then
         display[#display + 1] = estimatedBloodfury
     end
