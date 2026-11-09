@@ -26,6 +26,14 @@ local warlockDebuffDurations = {}
 local nativeTarget, nativeTargetError
 local nativePlayerAuras, nativePlayerError
 local UpdateNativeTargetSize
+local healthAlphaCurve
+if UnitHealthPercent and C_CurveUtil and C_CurveUtil.CreateCurve and
+    Enum and Enum.LuaCurveType and Enum.LuaCurveType.Step then
+    healthAlphaCurve = C_CurveUtil.CreateCurve()
+    healthAlphaCurve:SetType(Enum.LuaCurveType.Step)
+    healthAlphaCurve:AddPoint(0, 1)
+    healthAlphaCurve:AddPoint(1, 0)
+end
 local initialized, preview = false, false
 local names, spells = {}, {}
 local sealNames, estimatedSeal = {}, nil
@@ -760,6 +768,21 @@ local function Render()
     local now, display = GetTime(), {}
     local targetOK, targetExists = pcall(UnitExists, "target")
     local hasTarget = targetOK and not IsSecret(targetExists) and targetExists
+    if preview or hasTarget or InCombatLockdown() then
+        playerGroup.anchor:SetAlpha(1)
+    elseif healthAlphaCurve then
+        -- The evaluated health can be secret. Pass it directly to the frame, as LH_HideMe does.
+        local healthOK, alpha = pcall(UnitHealthPercent, "player", false, healthAlphaCurve)
+        if healthOK then playerGroup.anchor:SetAlpha(alpha)
+        else playerGroup.anchor:SetAlpha(0) end
+    else
+        local healthOK, health, maximum = pcall(function()
+            return UnitHealth("player"), UnitHealthMax("player")
+        end)
+        playerGroup.anchor:SetAlpha(healthOK and not IsSecret(health) and not IsSecret(maximum) and
+            type(health) == "number" and type(maximum) == "number" and maximum > 0 and
+            health < maximum and 1 or 0)
+    end
     local ok, attackable = pcall(HasAttackableTarget)
     if ok and attackable then
         for _, aura in ipairs(playerDebuffs) do
@@ -768,20 +791,18 @@ local function Render()
             end
         end
     end
-    if hasTarget then
-        for _, buff in ipairs(active) do
-            if buff.expires - now <= MAX_BUFF_REMAINING and buff.expires > now and
-                (not estimatedBloodfury or estimatedBloodfury.name ~= buff.name) and
-                (not estimatedSeal or not sealNames[buff.name]) then
-                display[#display + 1] = buff
-            end
+    for _, buff in ipairs(active) do
+        if buff.expires - now <= MAX_BUFF_REMAINING and buff.expires > now and
+            (not estimatedBloodfury or estimatedBloodfury.name ~= buff.name) and
+            (not estimatedSeal or not sealNames[buff.name]) then
+            display[#display + 1] = buff
         end
     end
-    if hasTarget and estimatedSeal and estimatedSeal.expires - now <= MAX_BUFF_REMAINING and
+    if estimatedSeal and estimatedSeal.expires - now <= MAX_BUFF_REMAINING and
         estimatedSeal.expires > now then
         display[#display + 1] = estimatedSeal
     end
-    if hasTarget and estimatedBloodfury and estimatedBloodfury.expires > now and
+    if estimatedBloodfury and estimatedBloodfury.expires > now and
         estimatedBloodfury.expires - now <= MAX_BUFF_REMAINING then
         display[#display + 1] = estimatedBloodfury
     end

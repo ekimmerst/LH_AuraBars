@@ -8,7 +8,7 @@
 
 <ul>
   <li>Shows relevant player and target auras in separate groups, with support for classes, races and factions.</li>
-  <li>Shows player buffs while a target exists, including when you target yourself; hides them without a target.</li>
+  <li>Shows player buffs while a target exists, in combat or below full health, including when you target yourself.</li>
   <li>Shows timed target buffs regardless of how long they have left; target debuffs keep the three-minute display limit.</li>
   <li>Tracks spell cooldowns alongside buffs and debuffs in the same compact style.</li>
   <li>Lets you move and resize the player and target groups separately, or keep their sizes synchronized.</li>
