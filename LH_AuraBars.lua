@@ -38,7 +38,9 @@ local initialized, preview = false, false
 local names, spells = {}, {}
 local sealNames, estimatedSeal = {}, nil
 local estimatedBloodfury
+local estimatedStoneform
 local bloodfuryIDs = {[20572] = true, [33697] = true, [33702] = true}
+local STONEFORM_ID = 20594
 local cooldownSpells, cooldowns = {}, {}
 local sealSeeds = {21084,20154,21082,20375,20164,20165,20166,20163}
 -- Resolve names in the client's language; names cover every rank of a spell.
@@ -474,6 +476,10 @@ local function Scan()
         local present = {}
         for _, buff in ipairs(snapshot) do
             present[buff.name] = true
+            if estimatedStoneform and estimatedStoneform.name == buff.name then
+                LH_AuraBarsDB.stoneformDuration = buff.duration
+                estimatedStoneform = nil
+            end
             if estimatedBloodfury and estimatedBloodfury.name == buff.name then
                 LH_AuraBarsDB.bloodfuryDuration = buff.duration
                 estimatedBloodfury = nil
@@ -500,6 +506,17 @@ local function Scan()
             estimatedBloodfury = nil
         end
     end
+end
+local function TrackStoneformCast(unit, id)
+    if IsSecret(unit) or unit ~= "player" or IsSecret(id) or id ~= STONEFORM_ID then return end
+    local name = AddSpell(id)
+    if not name then return end
+    local duration = LH_AuraBarsDB.stoneformDuration
+    if type(duration) ~= "number" or duration <= 0 then duration = 8 end
+    local now = GetTime()
+    estimatedStoneform = {name = name, spellID = id, duration = duration,
+        expires = now + duration, key = -998}
+    scanPending = true
 end
 local function TrackBloodfuryCast(unit, id)
     if IsSecret(unit) or unit ~= "player" or IsSecret(id) or not bloodfuryIDs[id] then return end
@@ -768,21 +785,6 @@ local function Render()
     local now, display = GetTime(), {}
     local targetOK, targetExists = pcall(UnitExists, "target")
     local hasTarget = targetOK and not IsSecret(targetExists) and targetExists
-    if preview or hasTarget or InCombatLockdown() then
-        playerGroup.anchor:SetAlpha(1)
-    elseif healthAlphaCurve then
-        -- The evaluated health can be secret. Pass it directly to the frame, as LH_HideMe does.
-        local healthOK, alpha = pcall(UnitHealthPercent, "player", false, healthAlphaCurve)
-        if healthOK then playerGroup.anchor:SetAlpha(alpha)
-        else playerGroup.anchor:SetAlpha(0) end
-    else
-        local healthOK, health, maximum = pcall(function()
-            return UnitHealth("player"), UnitHealthMax("player")
-        end)
-        playerGroup.anchor:SetAlpha(healthOK and not IsSecret(health) and not IsSecret(maximum) and
-            type(health) == "number" and type(maximum) == "number" and maximum > 0 and
-            health < maximum and 1 or 0)
-    end
     local ok, attackable = pcall(HasAttackableTarget)
     if ok and attackable then
         for _, aura in ipairs(playerDebuffs) do
@@ -794,9 +796,13 @@ local function Render()
     for _, buff in ipairs(active) do
         if buff.expires - now <= MAX_BUFF_REMAINING and buff.expires > now and
             (not estimatedBloodfury or estimatedBloodfury.name ~= buff.name) and
+            (not estimatedStoneform or estimatedStoneform.name ~= buff.name) and
             (not estimatedSeal or not sealNames[buff.name]) then
             display[#display + 1] = buff
         end
+    end
+    if estimatedStoneform and estimatedStoneform.expires > now then
+        display[#display + 1] = estimatedStoneform
     end
     if estimatedSeal and estimatedSeal.expires - now <= MAX_BUFF_REMAINING and
         estimatedSeal.expires > now then
@@ -815,6 +821,21 @@ local function Render()
         for index, duration in ipairs({8, 15, 30}) do
             display[#display + 1] = {name = "Test " .. index, duration = duration, expires = now + duration, key = -index, kind = index == 3 and "cooldown" or nil}
         end
+    end
+    if preview or hasTarget or InCombatLockdown() or #display > 0 then
+        playerGroup.anchor:SetAlpha(1)
+    elseif healthAlphaCurve then
+        -- The evaluated health can be secret. Pass it directly to the frame, as LH_HideMe does.
+        local healthOK, alpha = pcall(UnitHealthPercent, "player", false, healthAlphaCurve)
+        if healthOK then playerGroup.anchor:SetAlpha(alpha)
+        else playerGroup.anchor:SetAlpha(0) end
+    else
+        local healthOK, health, maximum = pcall(function()
+            return UnitHealth("player"), UnitHealthMax("player")
+        end)
+        playerGroup.anchor:SetAlpha(healthOK and not IsSecret(health) and not IsSecret(maximum) and
+            type(health) == "number" and type(maximum) == "number" and maximum > 0 and
+            health < maximum and 1 or 0)
     end
     RenderGroup(playerGroup, display, now)
     -- Reassert the affected unit after visibility changes as well as while visible.
@@ -940,6 +961,7 @@ events:SetScript("OnEvent", function(_, event, unit, castGUID, spellID)
     end
     if not initialized or (event == "UNIT_AURA" and (IsSecret(unit) or (unit ~= "player" and unit ~= "target"))) then return end
     if event == "UNIT_SPELLCAST_SUCCEEDED" then
+        pcall(TrackStoneformCast, unit, spellID)
         pcall(TrackBloodfuryCast, unit, spellID)
         pcall(TrackSealCast, unit, spellID)
         pcall(TrackCooldownCast, unit, spellID)
