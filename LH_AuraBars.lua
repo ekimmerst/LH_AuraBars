@@ -822,7 +822,17 @@ local function Render()
             display[#display + 1] = {name = "Test " .. index, duration = duration, expires = now + duration, key = -index, kind = index == 3 and "cooldown" or nil}
         end
     end
-    if preview or hasTarget or InCombatLockdown() or #display > 0 then
+    if LH_HideMeDB and LH_HideMeDB.hidePlayerFrame and PlayerFrame then
+        -- HideMe uses alpha on clients with the health curve and a visibility
+        -- driver otherwise. Follow the actual frame in either case.
+        local shownOK, shown = pcall(PlayerFrame.IsShown, PlayerFrame)
+        if shownOK and not IsSecret(shown) and not shown then
+            playerGroup.anchor:SetAlpha(0)
+        else
+            local alphaOK, alpha = pcall(PlayerFrame.GetAlpha, PlayerFrame)
+            if alphaOK then playerGroup.anchor:SetAlpha(alpha) end
+        end
+    elseif preview or hasTarget or InCombatLockdown() or #display > 0 then
         playerGroup.anchor:SetAlpha(1)
     elseif healthAlphaCurve then
         -- The evaluated health can be secret. Pass it directly to the frame, as LH_HideMe does.

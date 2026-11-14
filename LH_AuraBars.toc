@@ -6,7 +6,7 @@
 ## IconTexture: Interface\AddOns\LH_AuraBars\Media\Icon
 ## Notes: Buff, debuff and spell cooldown bars for every class, race and faction, matching MiniExpBar.
 ## Author: LH_AuraBars
-## Version: 1.9.2
+## Version: 1.9.3
 ## SavedVariablesPerCharacter: LH_AuraBarsDB
 
 LH_AuraBars.lua

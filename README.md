@@ -12,6 +12,7 @@
   <li>Shows timed target buffs regardless of how long they have left; target debuffs keep the three-minute display limit.</li>
   <li>Tracks spell cooldowns alongside buffs and debuffs in the same compact style.</li>
   <li>Lets you move and resize the player and target groups separately, or keep their sizes synchronized.</li>
+  <li>Follows the player frame's visibility when LH HideMe's player-frame option is enabled.</li>
 </ul>
 
 <h2 style="color: #c78be6;">Make it yours</h2>
@@ -50,6 +51,12 @@
 <p><strong>LH Tweaks is required</strong> and must be installed alongside LH AuraBars. I originally made this for my own UI, but I'm glad if it fits yours too. If you find an aura that is missing or behaves oddly, or have an improvement in mind, please tell me in the CurseForge comments.</p>
 
 <h2 style="color: #73c9c4;">Changelog</h2>
+
+<p><strong>1.9.3 - Forever and Retail</strong></p>
+
+<ul>
+  <li>Player aura bars now follow the player frame's visibility when LH HideMe's player-frame option is enabled.</li>
+</ul>
 
 <p><strong>1.9.2 - Forever and Retail</strong></p>
 
