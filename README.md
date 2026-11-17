@@ -8,6 +8,7 @@
 
 <ul>
   <li>Shows relevant player and target auras in separate groups, with support for classes, races and factions.</li>
+  <li>In a group, healers see their own short buffs, including HoTs, and debuffs they can dispel on friendly targets, including after switching targets in combat.</li>
   <li>Shows short player buffs while they are active, including Stoneform without a target and at full health.</li>
   <li>Shows timed target buffs regardless of how long they have left; target debuffs keep the three-minute display limit.</li>
   <li>Tracks spell cooldowns alongside buffs and debuffs in the same compact style.</li>
@@ -51,6 +52,12 @@
 <p><strong>LH Tweaks is required</strong> and must be installed alongside LH AuraBars. I originally made this for my own UI, but I'm glad if it fits yours too. If you find an aura that is missing or behaves oddly, or have an improvement in mind, please tell me in the CurseForge comments.</p>
 
 <h2 style="color: #73c9c4;">Changelog</h2>
+
+<p><strong>1.9.4 - Forever and Retail</strong></p>
+
+<ul>
+  <li>Use native aura filters for healer targets so self-cast short buffs and personally dispellable debuffs remain visible through target changes in combat. Recognize healing from assigned role, talent group or specialization.</li>
+</ul>
 
 <p><strong>1.9.3 - Forever and Retail</strong></p>
 

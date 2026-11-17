@@ -23,7 +23,7 @@ local groups = {playerGroup, targetGroup}
 local targetAuras = {}
 local untimedTargetAuras, seenUntimedTargetAuras = {}, {}
 local warlockDebuffDurations = {}
-local nativeTarget, nativeTargetError
+local nativeTarget, nativeHealerTarget, nativeTargetError
 local nativePlayerAuras, nativePlayerError
 local UpdateNativeTargetSize
 local healthAlphaCurve
@@ -175,6 +175,7 @@ local function UpdateWidth(group)
         row.time:SetWidth(42)
     end
     if group == targetGroup and nativeTarget then UpdateNativeTargetSize() end
+    if group == targetGroup and nativeHealerTarget then UpdateNativeTargetSize(nativeHealerTarget, targetGroup) end
     if group == playerGroup and nativePlayerAuras then UpdateNativeTargetSize(nativePlayerAuras, playerGroup) end
 end
 local function FinishResize(group)
@@ -274,7 +275,7 @@ end
 -- Like EllesmereUI's AuraKit, register display regions once and let Blizzard's
 -- AuraContainer assign, sort and update the auras inside its secure execution.
 -- No aura fields or secret frame geometry are read back into addon Lua.
-local function CreateNativeTarget(owner, unit, filters)
+local function CreateNativeTarget(owner, unit, filters, healer)
     -- Buffs use readable timers: native candidate filters only support total duration.
     owner, unit, filters = owner or targetGroup, unit or "target", filters or {"HARMFUL"}
     if not C_AddOns or not C_AddOns.LoadAddOn then return end
@@ -285,7 +286,9 @@ local function CreateNativeTarget(owner, unit, filters)
     end
     local container = CreateFrame("AuraContainer", nil, owner.anchor, "CustomAuraContainerTemplate")
     local state = {container = container, rows = {}, filters = filters, unit = unit}
-    if unit == "player" then nativePlayerAuras = state else nativeTarget = state end
+    if unit == "player" then nativePlayerAuras = state
+    elseif healer then nativeHealerTarget = state
+    else nativeTarget = state end
     container:SetPoint("BOTTOMLEFT", owner.anchor, "BOTTOMLEFT")
     container:SetSize(1, 1)
     local setAnchor = container.SetFlowLayoutAnchorPoint or container.SetAuraLayoutAnchorPoint
@@ -295,10 +298,11 @@ local function CreateNativeTarget(owner, unit, filters)
     setGrowth(container, AnchorUtil.FlowDirection.Right, AnchorUtil.FlowDirection.Up)
     setLine(container, owner.anchor:GetWidth())
     for _, filter in ipairs(filters) do
-        local harmful = filter == "HARMFUL"
+        local harmful = filter:find("^HARMFUL") ~= nil
+        local candidates = {maxDuration = not harmful and healer and 120 or math.huge}
         container:AddAuraGroup(filter, filter, {
             maxFrameCount = 255,
-            candidateFilters = {maxDuration = math.huge},
+            candidateFilters = candidates,
             sortMethod = AuraContainerSortMethod.ExpirationOnly,
             sortDirection = AuraContainerSortDirection.Normal,
             layout = {elementWidth = owner.anchor:GetWidth(),
@@ -701,19 +705,54 @@ local function HasAttackableTarget()
     local dead = UnitIsDeadOrGhost("target")
     return not IsSecret(dead) and not dead
 end
+local function IsHealingFriendlyTarget()
+    local grouped = IsInGroup and IsInGroup()
+    if IsSecret(grouped) then return false end
+    if grouped == nil and GetNumGroupMembers then
+        local count = GetNumGroupMembers()
+        grouped = not IsSecret(count) and count > 0
+    end
+    if IsSecret(grouped) or not grouped then return false end
+    local assigned = UnitGroupRolesAssigned and UnitGroupRolesAssigned("player")
+    local talentRole
+    if GetTalentGroupRole then
+        local group = GetActiveTalentGroup and GetActiveTalentGroup()
+        if not IsSecret(group) then talentRole = GetTalentGroupRole(group or 1) end
+    end
+    local specRole
+    if GetSpecialization and GetSpecializationRole then
+        local spec = GetSpecialization()
+        if not IsSecret(spec) and spec then specRole = GetSpecializationRole(spec) end
+    end
+    if (IsSecret(assigned) or assigned ~= "HEALER") and
+        (IsSecret(talentRole) or talentRole ~= "HEALER") and
+        (IsSecret(specRole) or specRole ~= "HEALER") then return false end
+    -- Forever can hide unit relationships in combat. Keep healer auras visible
+    -- until the client can establish that the target is hostile.
+    local ok, friendly = pcall(UnitCanAssist, "player", "target")
+    return not ok or IsSecret(friendly) or friendly == true
+end
 local function ScanTarget(clear)
     if clear then untimedTargetAuras = {} end
     seenUntimedTargetAuras = {}
-    local previous = clear and {} or targetAuras
+    local healing = IsHealingFriendlyTarget()
+    local previous = (clear or targetGroup.healing ~= healing) and {} or targetAuras
+    targetGroup.healing = healing
     targetAuras = {}
     local ok, exists = pcall(UnitExists, "target")
     if not ok or IsSecret(exists) or not exists then return end
-    for _, filter in ipairs(nativeTarget and {"HELPFUL"} or {"HELPFUL", "HARMFUL"}) do
+    local filters
+    if healing then
+        filters = nativeHealerTarget and {} or {"HELPFUL|PLAYER", "HARMFUL|RAID"}
+    else
+        filters = nativeTarget and {"HELPFUL"} or {"HELPFUL", "HARMFUL"}
+    end
+    for _, filter in ipairs(filters) do
         local readable, snapshot, incomplete = pcall(BuildSnapshot, "target", filter)
         local present = {}
         if readable and snapshot then
             for _, aura in ipairs(snapshot) do
-                if filter == "HARMFUL" then aura.kind, aura.key = "debuff", aura.key + 1000 end
+                if filter:find("^HARMFUL") then aura.kind, aura.key = "debuff", aura.key + 1000 end
                 present[aura.name .. "\031" .. aura.expires] = true
                 targetAuras[#targetAuras + 1] = aura
             end
@@ -721,7 +760,7 @@ local function ScanTarget(clear)
         -- Preserve known timers only for this target and the unreadable filter.
         if not readable or not snapshot or incomplete then
             for _, aura in ipairs(previous) do
-                if (filter == "HARMFUL") == (aura.kind == "debuff") and aura.expires > GetTime() and
+                if (filter:find("^HARMFUL") ~= nil) == (aura.kind == "debuff") and aura.expires > GetTime() and
                     not present[aura.name .. "\031" .. aura.expires] then
                     targetAuras[#targetAuras + 1] = aura
                 end
@@ -880,21 +919,28 @@ local function Render()
         end
     end
     RenderGroup(targetGroup, targetDisplay, now)
-    if nativeTarget then
-        local offset = #targetDisplay * HEIGHT * targetGroup.db.heightFactor
-        if nativeTarget.offset ~= offset then
-            nativeTarget.container:ClearAllPoints()
-            nativeTarget.container:SetPoint("BOTTOMLEFT", targetGroup.anchor, "BOTTOMLEFT", 0, offset)
-            nativeTarget.offset = offset
+    local healing = IsHealingFriendlyTarget()
+    local selected
+    if healing then selected = nativeHealerTarget else selected = nativeTarget end
+    for index = 1, 2 do
+        local state
+        if index == 1 then state = nativeTarget else state = nativeHealerTarget end
+        if state then
+            local offset = #targetDisplay * HEIGHT * targetGroup.db.heightFactor
+            if state.offset ~= offset then
+                state.container:ClearAllPoints()
+                state.container:SetPoint("BOTTOMLEFT", targetGroup.anchor, "BOTTOMLEFT", 0, offset)
+                state.offset = offset
+            end
+            local existsOK, exists = pcall(UnitExists, "target")
+            local shown = state == selected and not preview and existsOK and not IsSecret(exists) and exists == true
+            if state.shown ~= shown then
+                state.shown = shown
+                state.container:SetShown(shown)
+                state.container:SetUnit(state.unit)
+                if shown then state.container:UpdateAllAuras() end
+            elseif shown then state.container:SetUnit(state.unit) end
         end
-        local existsOK, exists = pcall(UnitExists, "target")
-        local shown = not preview and existsOK and not IsSecret(exists) and exists == true
-        if nativeTarget.shown ~= shown then
-            nativeTarget.shown = shown
-            nativeTarget.container:SetShown(shown)
-            nativeTarget.container:SetUnit(nativeTarget.unit)
-            if shown then nativeTarget.container:UpdateAllAuras() end
-        else nativeTarget.container:SetUnit(nativeTarget.unit) end
     end
 end
 local function Initialize()
@@ -950,6 +996,13 @@ local function Initialize()
         nativeTargetError = nativeError
         print("LH_AuraBars: Could not initialize native target auras. Use /lh_aurabars debug for details.")
     end
+    local healerOK, healerError = pcall(CreateNativeTarget, targetGroup, "target",
+        {"HELPFUL|PLAYER", "HARMFUL|RAID"}, true)
+    if not healerOK then
+        if nativeHealerTarget then nativeHealerTarget.container:Hide() end
+        nativeHealerTarget = nil
+        nativeTargetError = healerError
+    end
     local playerFilters = {"HARMFUL"}
     local playerOK, playerError = pcall(CreateNativeTarget, playerGroup, "player", playerFilters)
     if not playerOK then
@@ -984,6 +1037,10 @@ events:SetScript("OnEvent", function(_, event, unit, castGUID, spellID)
         if nativeTarget then
             nativeTarget.container:SetUnit(nativeTarget.unit)
             nativeTarget.container:UpdateAllAuras()
+        end
+        if nativeHealerTarget then
+            nativeHealerTarget.container:SetUnit(nativeHealerTarget.unit)
+            nativeHealerTarget.container:UpdateAllAuras()
         end
         Render()
         return
@@ -1047,11 +1104,18 @@ local function DebugTarget()
     end
     print("LH_AuraBars: Target diagnostics 1.5.4")
     print("LH_AuraBars: Native target auras = " .. (nativeTarget and "active" or "inactive"))
+    print("LH_AuraBars: Native healer target auras = " .. (nativeHealerTarget and "active" or "inactive"))
+    print("LH_AuraBars: Healer target mode = " .. tostring(IsHealingFriendlyTarget()))
     print("LH_AuraBars: Native player auras = " .. (nativePlayerAuras and "active" or "inactive"))
     if nativePlayerError then print("LH_AuraBars: Player aura initialization: " .. describe(nativePlayerError)) end
     if nativeTargetError then print("LH_AuraBars: Native initialization: " .. describe(nativeTargetError)) end
     report("Target exists", UnitExists, "target")
+    report("Grouped", IsInGroup)
+    report("Assigned role", UnitGroupRolesAssigned, "player")
+    report("Friendly target", UnitCanAssist, "player", "target")
     report("Batch HARMFUL", C_UnitAuras and C_UnitAuras.GetUnitAuras, "target", "HARMFUL")
+    report("Batch HELPFUL|PLAYER", C_UnitAuras and C_UnitAuras.GetUnitAuras, "target", "HELPFUL|PLAYER")
+    report("Batch HARMFUL|RAID", C_UnitAuras and C_UnitAuras.GetUnitAuras, "target", "HARMFUL|RAID")
     report("Index HARMFUL", C_UnitAuras and C_UnitAuras.GetAuraDataByIndex, "target", 1, "HARMFUL")
     report("UnitDebuff", UnitDebuff, "target", 1)
     report("UnitAura", UnitAura, "target", 1, "HARMFUL")
